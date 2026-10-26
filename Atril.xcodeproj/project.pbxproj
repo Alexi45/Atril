@@ -1,0 +1,718 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0B5621895D17DCFEFB54E8FA /* GuideViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D8CE811A9E4221067BD1B12 /* GuideViews.swift */; };
+		0CEE2566D55658500F0BE63E /* ClaudeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800B14F0E1F690F0C097648A /* ClaudeClient.swift */; };
+		0CFD77B0E653E60CC944DAD0 /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35AE7A1DEF5BFB331A39BA04 /* JSONValue.swift */; };
+		0E175204C12B1A24620473D2 /* TutorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A27B0D642F1FA39A8F0518D /* TutorService.swift */; };
+		248FBC1544EADF83C639A146 /* AtrilTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CF8816A178D05D274A57AB /* AtrilTests.swift */; };
+		2E52A9565F2582FF32206FEC /* ScriptIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00316256F8E456038E0995AC /* ScriptIndex.swift */; };
+		36FE6A9D2260C178DBBBD019 /* Coach.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D176DBF8567D2677F131DB /* Coach.swift */; };
+		3B07746F4F5E1F7F1E0F9AEC /* TutorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7953663B7B2617849EB33C1D /* TutorPanel.swift */; };
+		3EC9D615B0F359F8AF88EEE4 /* CombatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 435A94EF97CFB94A8DD6BC3D /* CombatView.swift */; };
+		40D1632E8E3311C277FE24A7 /* HeuristicAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878A7606B8C544D8F269B70F /* HeuristicAnalyzer.swift */; };
+		46E7CAA657DBDE8788E96206 /* SceneEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781AE0030547FA7FAD4AF314 /* SceneEditor.swift */; };
+		47BADAC35F12236A2D1B1A64 /* Combat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF6EDE295BDBB9A41D6FF5C /* Combat.swift */; };
+		4899AFA2D975060D23EEA466 /* AnalysisCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A520998CE7FF6F5E42BB27 /* AnalysisCenter.swift */; };
+		49E48F7CB8A1783F97832070 /* SessionRecap.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14F5530748911EDEEDD4FC7 /* SessionRecap.swift */; };
+		4A62B7BB2C10642B31E1B092 /* TableToolsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A52E9AE7D5F87B8C610AB3B /* TableToolsTests.swift */; };
+		53FA433ECCAF27F445D219A2 /* ScriptImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0097A823153AD960222D772D /* ScriptImporter.swift */; };
+		5B204DD1A46894100620D4FE /* AIEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBA477C7A53BA78D7AD6BDA5 /* AIEngineTests.swift */; };
+		6FFF7A53D3B0932A698DCD7B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6CCA2F67ECAB2D7EF8E66B78 /* Assets.xcassets */; };
+		71F49E549BD4F37625B9BFB6 /* AdventureDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C87551D9181A79EABB0693 /* AdventureDetailView.swift */; };
+		78F839D75607C2D74A1A5EA8 /* PlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D916439E84ABE9D09B4D9B0A /* PlayView.swift */; };
+		80C113CD40E187E56F647EDC /* GameSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718261296D74D289060F4C5B /* GameSystem.swift */; };
+		88E0C9505C2ED11FFA64E3C5 /* DiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35C33CBDE82E062E35C9CBD1 /* DiceView.swift */; };
+		8AAFA7ECCDD0FF627B5FE4FE /* TutorPrompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73BD22A5FF7570A964F99F80 /* TutorPrompts.swift */; };
+		977266CE0157B2CB5744B895 /* AIProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C1BB5A2B751098A72C3FF7 /* AIProbe.swift */; };
+		98F8394730EEC8A26B08073C /* ImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B029C9F9825A8502A50F78B /* ImporterTests.swift */; };
+		9D0939FEC043245B9C5267F9 /* PartyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B625B9881B818CC894486ACA /* PartyView.swift */; };
+		9E757E2036B23A6B5F8B8336 /* PlayController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BFE325316B8DFC89BA8F627 /* PlayController.swift */; };
+		9F5A656CC520AEE24F51E66D /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64488C577C986FCA3A5848C8 /* ImportView.swift */; };
+		A2CAE24DCDD892AEBE308AA6 /* AdventureMap.swift in Sources */ = {isa = PBXBuildFile; fileRef = A40D05A592A94C063C771686 /* AdventureMap.swift */; };
+		A5E843F4D875B7641EA9FCA9 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E88075C4A9DB8B0978E6D2B /* Theme.swift */; };
+		A922BF6441BFC7C8530C3024 /* Dice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 645DCAC3B0B26EF2772415C1 /* Dice.swift */; };
+		AAACBD4257D374F3D95E6A28 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E08AB34AD0BE307D1764F01 /* SettingsView.swift */; };
+		B0F86482FAEEEECA5ED859C8 /* SampleAdventure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C261045B83AF13BC5FA53C2 /* SampleAdventure.swift */; };
+		B391CA86C6EDF1C4CFAE5E6E /* SessionRecapViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D42C870231A56A2685F945 /* SessionRecapViews.swift */; };
+		B6796733BA33BF64C02472C5 /* Narrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B493D33F0A4AFD21D58F49C /* Narrator.swift */; };
+		B7209BD655D53EACDD28E299 /* AtrilApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561FCF8CC66AF6B8C85519CF /* AtrilApp.swift */; };
+		CDDBE67030849FDAC316E7F9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1FCCB98E0B32E3014B7293 /* RootView.swift */; };
+		CE0A2737A03806F155EE02B7 /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE835A2388CFCF91A3344F40 /* SessionState.swift */; };
+		EFE96E2E55053FDFEEC114DD /* AppleIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 466EFCB302B5CDCE68450AD5 /* AppleIntelligence.swift */; };
+		EFFC1FBA1BA842F6E4E74D1A /* TableTutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6232F99E066D37EBCC4CF6AB /* TableTutor.swift */; };
+		F158068C378F5DDAE484448A /* AdventureGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34465533F020EF6AE7837092 /* AdventureGuide.swift */; };
+		F3435313F397103CE4978B20 /* Adventure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53D604CF007DF8B811BA4C79 /* Adventure.swift */; };
+		F470F4791C861D5511C0068D /* GuideDrafts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1DFA049593D0C29F7E4D96 /* GuideDrafts.swift */; };
+		F4F484BF30F4F6B3BED3F380 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5701AB8695083D4338E4F6F /* KeychainStore.swift */; };
+		FB22291EB55EDAD7D9226C42 /* PlayerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34DE174BA64AB8EFDE6C9A21 /* PlayerScreen.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		846DF2E505888FD09B34E123 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3DADF1D8473DD6254F5A66F7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6896832EF83939DDE3E8C941;
+			remoteInfo = Atril;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		00316256F8E456038E0995AC /* ScriptIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptIndex.swift; sourceTree = "<group>"; };
+		0097A823153AD960222D772D /* ScriptImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptImporter.swift; sourceTree = "<group>"; };
+		0843704B5349FF90B3AFA441 /* Atril.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Atril.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A52E9AE7D5F87B8C610AB3B /* TableToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableToolsTests.swift; sourceTree = "<group>"; };
+		0B493D33F0A4AFD21D58F49C /* Narrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Narrator.swift; sourceTree = "<group>"; };
+		0F1FCCB98E0B32E3014B7293 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		2D8CE811A9E4221067BD1B12 /* GuideViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideViews.swift; sourceTree = "<group>"; };
+		307FACA83DA001AE468F2FDD /* AtrilTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = AtrilTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		34465533F020EF6AE7837092 /* AdventureGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdventureGuide.swift; sourceTree = "<group>"; };
+		34DE174BA64AB8EFDE6C9A21 /* PlayerScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerScreen.swift; sourceTree = "<group>"; };
+		35AE7A1DEF5BFB331A39BA04 /* JSONValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONValue.swift; sourceTree = "<group>"; };
+		35C33CBDE82E062E35C9CBD1 /* DiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiceView.swift; sourceTree = "<group>"; };
+		3C261045B83AF13BC5FA53C2 /* SampleAdventure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleAdventure.swift; sourceTree = "<group>"; };
+		435A94EF97CFB94A8DD6BC3D /* CombatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatView.swift; sourceTree = "<group>"; };
+		466EFCB302B5CDCE68450AD5 /* AppleIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleIntelligence.swift; sourceTree = "<group>"; };
+		4BF6EDE295BDBB9A41D6FF5C /* Combat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Combat.swift; sourceTree = "<group>"; };
+		4BFE325316B8DFC89BA8F627 /* PlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayController.swift; sourceTree = "<group>"; };
+		4E08AB34AD0BE307D1764F01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		50CF8816A178D05D274A57AB /* AtrilTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtrilTests.swift; sourceTree = "<group>"; };
+		53D604CF007DF8B811BA4C79 /* Adventure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Adventure.swift; sourceTree = "<group>"; };
+		561FCF8CC66AF6B8C85519CF /* AtrilApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtrilApp.swift; sourceTree = "<group>"; };
+		5A27B0D642F1FA39A8F0518D /* TutorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorService.swift; sourceTree = "<group>"; };
+		5B029C9F9825A8502A50F78B /* ImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImporterTests.swift; sourceTree = "<group>"; };
+		6232F99E066D37EBCC4CF6AB /* TableTutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableTutor.swift; sourceTree = "<group>"; };
+		64488C577C986FCA3A5848C8 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
+		645DCAC3B0B26EF2772415C1 /* Dice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dice.swift; sourceTree = "<group>"; };
+		6CCA2F67ECAB2D7EF8E66B78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		6E88075C4A9DB8B0978E6D2B /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		718261296D74D289060F4C5B /* GameSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSystem.swift; sourceTree = "<group>"; };
+		73BD22A5FF7570A964F99F80 /* TutorPrompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorPrompts.swift; sourceTree = "<group>"; };
+		781AE0030547FA7FAD4AF314 /* SceneEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneEditor.swift; sourceTree = "<group>"; };
+		7953663B7B2617849EB33C1D /* TutorPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorPanel.swift; sourceTree = "<group>"; };
+		800B14F0E1F690F0C097648A /* ClaudeClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeClient.swift; sourceTree = "<group>"; };
+		878A7606B8C544D8F269B70F /* HeuristicAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeuristicAnalyzer.swift; sourceTree = "<group>"; };
+		9B1DFA049593D0C29F7E4D96 /* GuideDrafts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideDrafts.swift; sourceTree = "<group>"; };
+		A14F5530748911EDEEDD4FC7 /* SessionRecap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecap.swift; sourceTree = "<group>"; };
+		A3D176DBF8567D2677F131DB /* Coach.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coach.swift; sourceTree = "<group>"; };
+		A40D05A592A94C063C771686 /* AdventureMap.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdventureMap.swift; sourceTree = "<group>"; };
+		AE835A2388CFCF91A3344F40 /* SessionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionState.swift; sourceTree = "<group>"; };
+		B625B9881B818CC894486ACA /* PartyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyView.swift; sourceTree = "<group>"; };
+		BBA477C7A53BA78D7AD6BDA5 /* AIEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEngineTests.swift; sourceTree = "<group>"; };
+		D0C1BB5A2B751098A72C3FF7 /* AIProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProbe.swift; sourceTree = "<group>"; };
+		D916439E84ABE9D09B4D9B0A /* PlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayView.swift; sourceTree = "<group>"; };
+		F0C87551D9181A79EABB0693 /* AdventureDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdventureDetailView.swift; sourceTree = "<group>"; };
+		F2D42C870231A56A2685F945 /* SessionRecapViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecapViews.swift; sourceTree = "<group>"; };
+		F4A520998CE7FF6F5E42BB27 /* AnalysisCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisCenter.swift; sourceTree = "<group>"; };
+		F5701AB8695083D4338E4F6F /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		04442224A3315EA7BC5C3D86 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				561FCF8CC66AF6B8C85519CF /* AtrilApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		04751FEA3324EC85740D97B4 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				466EFCB302B5CDCE68450AD5 /* AppleIntelligence.swift */,
+				A3D176DBF8567D2677F131DB /* Coach.swift */,
+				9B1DFA049593D0C29F7E4D96 /* GuideDrafts.swift */,
+				878A7606B8C544D8F269B70F /* HeuristicAnalyzer.swift */,
+				00316256F8E456038E0995AC /* ScriptIndex.swift */,
+				A14F5530748911EDEEDD4FC7 /* SessionRecap.swift */,
+				6232F99E066D37EBCC4CF6AB /* TableTutor.swift */,
+			);
+			path = AI;
+			sourceTree = "<group>";
+		};
+		1B65532F02256187B9FFD3FD /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				C4EE1EA2C6EA8ACB02703AF8 /* AtrilTests */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		1BDBDDB88CB370AA42A3EC1C /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				2D8CE811A9E4221067BD1B12 /* GuideViews.swift */,
+				6E88075C4A9DB8B0978E6D2B /* Theme.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		2EB15CB99CDA924D8904ECE9 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				F4A520998CE7FF6F5E42BB27 /* AnalysisCenter.swift */,
+				800B14F0E1F690F0C097648A /* ClaudeClient.swift */,
+				645DCAC3B0B26EF2772415C1 /* Dice.swift */,
+				35AE7A1DEF5BFB331A39BA04 /* JSONValue.swift */,
+				F5701AB8695083D4338E4F6F /* KeychainStore.swift */,
+				0B493D33F0A4AFD21D58F49C /* Narrator.swift */,
+				0097A823153AD960222D772D /* ScriptImporter.swift */,
+				73BD22A5FF7570A964F99F80 /* TutorPrompts.swift */,
+				5A27B0D642F1FA39A8F0518D /* TutorService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		3039810076AB3096D4978A04 /* Play */ = {
+			isa = PBXGroup;
+			children = (
+				435A94EF97CFB94A8DD6BC3D /* CombatView.swift */,
+				35C33CBDE82E062E35C9CBD1 /* DiceView.swift */,
+				B625B9881B818CC894486ACA /* PartyView.swift */,
+				4BFE325316B8DFC89BA8F627 /* PlayController.swift */,
+				D916439E84ABE9D09B4D9B0A /* PlayView.swift */,
+				F2D42C870231A56A2685F945 /* SessionRecapViews.swift */,
+				7953663B7B2617849EB33C1D /* TutorPanel.swift */,
+			);
+			path = Play;
+			sourceTree = "<group>";
+		};
+		4440D2980340507BCE7078D0 /* Atril */ = {
+			isa = PBXGroup;
+			children = (
+				04751FEA3324EC85740D97B4 /* AI */,
+				04442224A3315EA7BC5C3D86 /* App */,
+				9EEC4159D9792371A5128520 /* Demo */,
+				85704E14DFECEAD39643A4C4 /* Models */,
+				3039810076AB3096D4978A04 /* Play */,
+				B53339A57BA5D908EE8D2D9A /* Resources */,
+				2EB15CB99CDA924D8904ECE9 /* Services */,
+				84FDA033DFEBB35DB6161D69 /* Views */,
+			);
+			path = Atril;
+			sourceTree = "<group>";
+		};
+		5F5C49D9FC5B695FE3EBB06F = {
+			isa = PBXGroup;
+			children = (
+				4440D2980340507BCE7078D0 /* Atril */,
+				1B65532F02256187B9FFD3FD /* Tests */,
+				F277CCDF9536E5FE47F7EE0A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		84FDA033DFEBB35DB6161D69 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				1BDBDDB88CB370AA42A3EC1C /* Components */,
+				F0C87551D9181A79EABB0693 /* AdventureDetailView.swift */,
+				A40D05A592A94C063C771686 /* AdventureMap.swift */,
+				64488C577C986FCA3A5848C8 /* ImportView.swift */,
+				34DE174BA64AB8EFDE6C9A21 /* PlayerScreen.swift */,
+				0F1FCCB98E0B32E3014B7293 /* RootView.swift */,
+				781AE0030547FA7FAD4AF314 /* SceneEditor.swift */,
+				4E08AB34AD0BE307D1764F01 /* SettingsView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		85704E14DFECEAD39643A4C4 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				53D604CF007DF8B811BA4C79 /* Adventure.swift */,
+				34465533F020EF6AE7837092 /* AdventureGuide.swift */,
+				4BF6EDE295BDBB9A41D6FF5C /* Combat.swift */,
+				718261296D74D289060F4C5B /* GameSystem.swift */,
+				AE835A2388CFCF91A3344F40 /* SessionState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		9EEC4159D9792371A5128520 /* Demo */ = {
+			isa = PBXGroup;
+			children = (
+				D0C1BB5A2B751098A72C3FF7 /* AIProbe.swift */,
+				3C261045B83AF13BC5FA53C2 /* SampleAdventure.swift */,
+			);
+			path = Demo;
+			sourceTree = "<group>";
+		};
+		B53339A57BA5D908EE8D2D9A /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				6CCA2F67ECAB2D7EF8E66B78 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		C4EE1EA2C6EA8ACB02703AF8 /* AtrilTests */ = {
+			isa = PBXGroup;
+			children = (
+				BBA477C7A53BA78D7AD6BDA5 /* AIEngineTests.swift */,
+				50CF8816A178D05D274A57AB /* AtrilTests.swift */,
+				5B029C9F9825A8502A50F78B /* ImporterTests.swift */,
+				0A52E9AE7D5F87B8C610AB3B /* TableToolsTests.swift */,
+			);
+			path = AtrilTests;
+			sourceTree = "<group>";
+		};
+		F277CCDF9536E5FE47F7EE0A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0843704B5349FF90B3AFA441 /* Atril.app */,
+				307FACA83DA001AE468F2FDD /* AtrilTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		6896832EF83939DDE3E8C941 /* Atril */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5DEC3B61E448B24136A8A942 /* Build configuration list for PBXNativeTarget "Atril" */;
+			buildPhases = (
+				65FB3116A1DB2CCB240CDDCF /* Sources */,
+				C8FD2B94ADCFD2CE5E7233BB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Atril;
+			packageProductDependencies = (
+			);
+			productName = Atril;
+			productReference = 0843704B5349FF90B3AFA441 /* Atril.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FD0EF0F7003E781465A91E9D /* AtrilTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E3F587922166B27C56EE80B2 /* Build configuration list for PBXNativeTarget "AtrilTests" */;
+			buildPhases = (
+				4CFBA1822C9797D8FAA0A80B /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7A65E78E3071C6DA87CF873B /* PBXTargetDependency */,
+			);
+			name = AtrilTests;
+			packageProductDependencies = (
+			);
+			productName = AtrilTests;
+			productReference = 307FACA83DA001AE468F2FDD /* AtrilTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		3DADF1D8473DD6254F5A66F7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					6896832EF83939DDE3E8C941 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+					FD0EF0F7003E781465A91E9D = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = D0ED7CEB50DA11F84FE56511 /* Build configuration list for PBXProject "Atril" */;
+			developmentRegion = es;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				es,
+			);
+			mainGroup = 5F5C49D9FC5B695FE3EBB06F;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = F277CCDF9536E5FE47F7EE0A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				6896832EF83939DDE3E8C941 /* Atril */,
+				FD0EF0F7003E781465A91E9D /* AtrilTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C8FD2B94ADCFD2CE5E7233BB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6FFF7A53D3B0932A698DCD7B /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4CFBA1822C9797D8FAA0A80B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5B204DD1A46894100620D4FE /* AIEngineTests.swift in Sources */,
+				248FBC1544EADF83C639A146 /* AtrilTests.swift in Sources */,
+				98F8394730EEC8A26B08073C /* ImporterTests.swift in Sources */,
+				4A62B7BB2C10642B31E1B092 /* TableToolsTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		65FB3116A1DB2CCB240CDDCF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				977266CE0157B2CB5744B895 /* AIProbe.swift in Sources */,
+				F3435313F397103CE4978B20 /* Adventure.swift in Sources */,
+				71F49E549BD4F37625B9BFB6 /* AdventureDetailView.swift in Sources */,
+				F158068C378F5DDAE484448A /* AdventureGuide.swift in Sources */,
+				A2CAE24DCDD892AEBE308AA6 /* AdventureMap.swift in Sources */,
+				4899AFA2D975060D23EEA466 /* AnalysisCenter.swift in Sources */,
+				EFE96E2E55053FDFEEC114DD /* AppleIntelligence.swift in Sources */,
+				B7209BD655D53EACDD28E299 /* AtrilApp.swift in Sources */,
+				0CEE2566D55658500F0BE63E /* ClaudeClient.swift in Sources */,
+				36FE6A9D2260C178DBBBD019 /* Coach.swift in Sources */,
+				47BADAC35F12236A2D1B1A64 /* Combat.swift in Sources */,
+				3EC9D615B0F359F8AF88EEE4 /* CombatView.swift in Sources */,
+				A922BF6441BFC7C8530C3024 /* Dice.swift in Sources */,
+				88E0C9505C2ED11FFA64E3C5 /* DiceView.swift in Sources */,
+				80C113CD40E187E56F647EDC /* GameSystem.swift in Sources */,
+				F470F4791C861D5511C0068D /* GuideDrafts.swift in Sources */,
+				0B5621895D17DCFEFB54E8FA /* GuideViews.swift in Sources */,
+				40D1632E8E3311C277FE24A7 /* HeuristicAnalyzer.swift in Sources */,
+				9F5A656CC520AEE24F51E66D /* ImportView.swift in Sources */,
+				0CFD77B0E653E60CC944DAD0 /* JSONValue.swift in Sources */,
+				F4F484BF30F4F6B3BED3F380 /* KeychainStore.swift in Sources */,
+				B6796733BA33BF64C02472C5 /* Narrator.swift in Sources */,
+				9D0939FEC043245B9C5267F9 /* PartyView.swift in Sources */,
+				9E757E2036B23A6B5F8B8336 /* PlayController.swift in Sources */,
+				78F839D75607C2D74A1A5EA8 /* PlayView.swift in Sources */,
+				FB22291EB55EDAD7D9226C42 /* PlayerScreen.swift in Sources */,
+				CDDBE67030849FDAC316E7F9 /* RootView.swift in Sources */,
+				B0F86482FAEEEECA5ED859C8 /* SampleAdventure.swift in Sources */,
+				46E7CAA657DBDE8788E96206 /* SceneEditor.swift in Sources */,
+				53FA433ECCAF27F445D219A2 /* ScriptImporter.swift in Sources */,
+				2E52A9565F2582FF32206FEC /* ScriptIndex.swift in Sources */,
+				49E48F7CB8A1783F97832070 /* SessionRecap.swift in Sources */,
+				B391CA86C6EDF1C4CFAE5E6E /* SessionRecapViews.swift in Sources */,
+				CE0A2737A03806F155EE02B7 /* SessionState.swift in Sources */,
+				AAACBD4257D374F3D95E6A28 /* SettingsView.swift in Sources */,
+				EFFC1FBA1BA842F6E4E74D1A /* TableTutor.swift in Sources */,
+				A5E843F4D875B7641EA9FCA9 /* Theme.swift in Sources */,
+				3B07746F4F5E1F7F1E0F9AEC /* TutorPanel.swift in Sources */,
+				8AAFA7ECCDD0FF627B5FE4FE /* TutorPrompts.swift in Sources */,
+				0E175204C12B1A24620473D2 /* TutorService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7A65E78E3071C6DA87CF873B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6896832EF83939DDE3E8C941 /* Atril */;
+			targetProxy = 846DF2E505888FD09B34E123 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		208D3B341FCA6EDEFCF9B3AB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alejandroriscart.atril.tests;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Atril.app/Atril";
+				"TEST_HOST[sdk=iphone*]" = "$(BUILT_PRODUCTS_DIR)/Atril.app/Atril";
+				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/Atril.app/Contents/MacOS/Atril";
+			};
+			name = Debug;
+		};
+		27D72E825F3E7B0E92D58033 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Atril;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					FoundationModels,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alejandroriscart.atril;
+				PRODUCT_NAME = Atril;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Release;
+		};
+		2B35FABD9EA8175A8B553E82 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		51A367801DFB948B3C03CE88 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				MARKETING_VERSION = 1.0.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = auto;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		AE0A828E6188AA334B872260 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alejandroriscart.atril.tests;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Atril.app/Atril";
+				"TEST_HOST[sdk=iphone*]" = "$(BUILT_PRODUCTS_DIR)/Atril.app/Atril";
+				"TEST_HOST[sdk=macosx*]" = "$(BUILT_PRODUCTS_DIR)/Atril.app/Contents/MacOS/Atril";
+			};
+			name = Release;
+		};
+		F5605699AD20AD67A082D72F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Atril;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				OTHER_LDFLAGS = (
+					"-weak_framework",
+					FoundationModels,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.alejandroriscart.atril;
+				PRODUCT_NAME = Atril;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = YES;
+				TARGETED_DEVICE_FAMILY = 2;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5DEC3B61E448B24136A8A942 /* Build configuration list for PBXNativeTarget "Atril" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F5605699AD20AD67A082D72F /* Debug */,
+				27D72E825F3E7B0E92D58033 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D0ED7CEB50DA11F84FE56511 /* Build configuration list for PBXProject "Atril" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				51A367801DFB948B3C03CE88 /* Debug */,
+				2B35FABD9EA8175A8B553E82 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E3F587922166B27C56EE80B2 /* Build configuration list for PBXNativeTarget "AtrilTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				208D3B341FCA6EDEFCF9B3AB /* Debug */,
+				AE0A828E6188AA334B872260 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 3DADF1D8473DD6254F5A66F7 /* Project object */;
+}
