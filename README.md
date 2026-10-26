@@ -58,3 +58,7 @@ Los PDF escaneados se leen con OCR (Vision) en el propio dispositivo.
 ```bash
 build/DerivedData/Build/Products/Debug/Atril.app/Contents/MacOS/Atril -probeAI
 ```
+
+---
+
+© 2026 Alejandro Riscart Rosado. Todos los derechos reservados. Consulta [LICENSE](LICENSE).
