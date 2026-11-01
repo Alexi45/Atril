@@ -48,6 +48,25 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+    # Se combina con las claves generadas: aquí solo lo que no se puede expresar con INFOPLIST_KEY.
+    info:
+      path: Atril/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # El .atril se lee en su sitio con acceso temporal (`openArchive`); no hace falta copiarlo.
+        LSSupportsOpeningDocumentsInPlace: true
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: com.alejandroriscart.atril.adventure
+            UTTypeDescription: Aventura de Atril
+            UTTypeConformsTo: [public.json, public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [atril]
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Aventura de Atril
+            CFBundleTypeRole: Editor
+            LSHandlerRank: Owner
+            LSItemContentTypes: [com.alejandroriscart.atril.adventure]
 
   AtrilTests:
     type: bundle.unit-test

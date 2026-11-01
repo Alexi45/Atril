@@ -11,6 +11,8 @@ struct RootView: View {
     @State private var showImport = false
     @State private var showSettings = false
     @State private var pendingDelete: Adventure?
+    @State private var showOpenArchive = false
+    @State private var archiveError: String?
 
     var body: some View {
         Group {
@@ -31,7 +33,30 @@ struct RootView: View {
         .sheet(isPresented: $showSettings) {
             NavigationStack { SettingsView() }
         }
+        .fileImporter(isPresented: $showOpenArchive, allowedContentTypes: [.atrilAdventure, .json]) { result in
+            if let url = try? result.get() { openArchive(url) }
+        }
+        // Un .atril abierto desde Archivos, AirDrop o el Finder.
+        .onOpenURL { url in openArchive(url) }
+        .alert("No se ha podido abrir la aventura", isPresented: Binding(get: { archiveError != nil }, set: { if !$0 { archiveError = nil } })) {
+            Button("Aceptar", role: .cancel) {}
+        } message: {
+            Text(archiveError ?? "")
+        }
         .task { seedForScreenshotsIfNeeded() }
+    }
+
+    private func openArchive(_ url: URL) {
+        let accessing = url.startAccessingSecurityScopedResource()
+        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let archive = try AdventureArchive.decode(try Data(contentsOf: url))
+            let adventure = archive.restore(into: context, existingTitles: Set(adventures.map(\.title)))
+            activeSession = nil
+            selection = adventure
+        } catch {
+            archiveError = error.localizedDescription
+        }
     }
 
     private var library: some View {
@@ -57,8 +82,16 @@ struct RootView: View {
             }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Importar guion", systemImage: "plus") { showImport = true }
-                        .keyboardShortcut("n", modifiers: .command)
+                    Menu {
+                        Button("Importar guion…", systemImage: "doc.badge.plus") { showImport = true }
+                            .keyboardShortcut("n", modifiers: .command)
+                        Button("Abrir aventura de Atril…", systemImage: "square.and.arrow.down") { showOpenArchive = true }
+                            .keyboardShortcut("o", modifiers: .command)
+                    } label: {
+                        Label("Añadir", systemImage: "plus")
+                    } primaryAction: {
+                        showImport = true
+                    }
                 }
                 #if os(iOS)
                 ToolbarItem(placement: .topBarLeading) {

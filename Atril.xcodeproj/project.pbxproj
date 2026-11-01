@@ -7,16 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02427D054D05062EAD478EA4 /* PrepSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F90392B95BB7D75A86F56837 /* PrepSheet.swift */; };
 		0B5621895D17DCFEFB54E8FA /* GuideViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D8CE811A9E4221067BD1B12 /* GuideViews.swift */; };
 		0CEE2566D55658500F0BE63E /* ClaudeClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800B14F0E1F690F0C097648A /* ClaudeClient.swift */; };
 		0CFD77B0E653E60CC944DAD0 /* JSONValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35AE7A1DEF5BFB331A39BA04 /* JSONValue.swift */; };
 		0E175204C12B1A24620473D2 /* TutorService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A27B0D642F1FA39A8F0518D /* TutorService.swift */; };
+		0E7853E88F6C52417319CF14 /* NewFeaturesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD31579491B6B9F737FB01D6 /* NewFeaturesTests.swift */; };
 		248FBC1544EADF83C639A146 /* AtrilTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CF8816A178D05D274A57AB /* AtrilTests.swift */; };
 		2E52A9565F2582FF32206FEC /* ScriptIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00316256F8E456038E0995AC /* ScriptIndex.swift */; };
 		36FE6A9D2260C178DBBBD019 /* Coach.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3D176DBF8567D2677F131DB /* Coach.swift */; };
 		3B07746F4F5E1F7F1E0F9AEC /* TutorPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7953663B7B2617849EB33C1D /* TutorPanel.swift */; };
 		3EC9D615B0F359F8AF88EEE4 /* CombatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 435A94EF97CFB94A8DD6BC3D /* CombatView.swift */; };
 		40D1632E8E3311C277FE24A7 /* HeuristicAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 878A7606B8C544D8F269B70F /* HeuristicAnalyzer.swift */; };
+		4645606B30E8FEBB5ED69905 /* PortraitViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD9FFB82FBFF1D4AFC2A870E /* PortraitViews.swift */; };
 		46E7CAA657DBDE8788E96206 /* SceneEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 781AE0030547FA7FAD4AF314 /* SceneEditor.swift */; };
 		47BADAC35F12236A2D1B1A64 /* Combat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF6EDE295BDBB9A41D6FF5C /* Combat.swift */; };
 		4899AFA2D975060D23EEA466 /* AnalysisCenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4A520998CE7FF6F5E42BB27 /* AnalysisCenter.swift */; };
@@ -30,6 +33,7 @@
 		80C113CD40E187E56F647EDC /* GameSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718261296D74D289060F4C5B /* GameSystem.swift */; };
 		88E0C9505C2ED11FFA64E3C5 /* DiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35C33CBDE82E062E35C9CBD1 /* DiceView.swift */; };
 		8AAFA7ECCDD0FF627B5FE4FE /* TutorPrompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73BD22A5FF7570A964F99F80 /* TutorPrompts.swift */; };
+		94EFB26C1C4D0945A9436157 /* AmbienceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103EE4CC1037D40CBCFAABA4 /* AmbienceView.swift */; };
 		977266CE0157B2CB5744B895 /* AIProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0C1BB5A2B751098A72C3FF7 /* AIProbe.swift */; };
 		98F8394730EEC8A26B08073C /* ImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B029C9F9825A8502A50F78B /* ImporterTests.swift */; };
 		9D0939FEC043245B9C5267F9 /* PartyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B625B9881B818CC894486ACA /* PartyView.swift */; };
@@ -45,13 +49,16 @@
 		B7209BD655D53EACDD28E299 /* AtrilApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561FCF8CC66AF6B8C85519CF /* AtrilApp.swift */; };
 		CDDBE67030849FDAC316E7F9 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F1FCCB98E0B32E3014B7293 /* RootView.swift */; };
 		CE0A2737A03806F155EE02B7 /* SessionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE835A2388CFCF91A3344F40 /* SessionState.swift */; };
+		ECD92C7310E27CDFC40BA832 /* AdventureArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB46C06E28CA27C9BBFB5094 /* AdventureArchive.swift */; };
 		EFE96E2E55053FDFEEC114DD /* AppleIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 466EFCB302B5CDCE68450AD5 /* AppleIntelligence.swift */; };
 		EFFC1FBA1BA842F6E4E74D1A /* TableTutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6232F99E066D37EBCC4CF6AB /* TableTutor.swift */; };
 		F158068C378F5DDAE484448A /* AdventureGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34465533F020EF6AE7837092 /* AdventureGuide.swift */; };
 		F3435313F397103CE4978B20 /* Adventure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53D604CF007DF8B811BA4C79 /* Adventure.swift */; };
 		F470F4791C861D5511C0068D /* GuideDrafts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B1DFA049593D0C29F7E4D96 /* GuideDrafts.swift */; };
 		F4F484BF30F4F6B3BED3F380 /* KeychainStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5701AB8695083D4338E4F6F /* KeychainStore.swift */; };
+		F704816F15A40E12B238A0E6 /* GuideSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB8D3933492D4460AB3233F /* GuideSearch.swift */; };
 		FB22291EB55EDAD7D9226C42 /* PlayerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34DE174BA64AB8EFDE6C9A21 /* PlayerScreen.swift */; };
+		FC40BD665A95ECB7950D3C8E /* Ambience.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52EF8E43582FF2B76008FBC9 /* Ambience.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +78,7 @@
 		0A52E9AE7D5F87B8C610AB3B /* TableToolsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TableToolsTests.swift; sourceTree = "<group>"; };
 		0B493D33F0A4AFD21D58F49C /* Narrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Narrator.swift; sourceTree = "<group>"; };
 		0F1FCCB98E0B32E3014B7293 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		103EE4CC1037D40CBCFAABA4 /* AmbienceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbienceView.swift; sourceTree = "<group>"; };
 		2D8CE811A9E4221067BD1B12 /* GuideViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideViews.swift; sourceTree = "<group>"; };
 		307FACA83DA001AE468F2FDD /* AtrilTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = AtrilTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		34465533F020EF6AE7837092 /* AdventureGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdventureGuide.swift; sourceTree = "<group>"; };
@@ -84,6 +92,7 @@
 		4BFE325316B8DFC89BA8F627 /* PlayController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayController.swift; sourceTree = "<group>"; };
 		4E08AB34AD0BE307D1764F01 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		50CF8816A178D05D274A57AB /* AtrilTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtrilTests.swift; sourceTree = "<group>"; };
+		52EF8E43582FF2B76008FBC9 /* Ambience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Ambience.swift; sourceTree = "<group>"; };
 		53D604CF007DF8B811BA4C79 /* Adventure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Adventure.swift; sourceTree = "<group>"; };
 		561FCF8CC66AF6B8C85519CF /* AtrilApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AtrilApp.swift; sourceTree = "<group>"; };
 		5A27B0D642F1FA39A8F0518D /* TutorService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorService.swift; sourceTree = "<group>"; };
@@ -108,10 +117,16 @@
 		BBA477C7A53BA78D7AD6BDA5 /* AIEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEngineTests.swift; sourceTree = "<group>"; };
 		D0C1BB5A2B751098A72C3FF7 /* AIProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIProbe.swift; sourceTree = "<group>"; };
 		D916439E84ABE9D09B4D9B0A /* PlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayView.swift; sourceTree = "<group>"; };
+		DD9FFB82FBFF1D4AFC2A870E /* PortraitViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortraitViews.swift; sourceTree = "<group>"; };
+		EB46C06E28CA27C9BBFB5094 /* AdventureArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdventureArchive.swift; sourceTree = "<group>"; };
+		EEB8D3933492D4460AB3233F /* GuideSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuideSearch.swift; sourceTree = "<group>"; };
 		F0C87551D9181A79EABB0693 /* AdventureDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdventureDetailView.swift; sourceTree = "<group>"; };
 		F2D42C870231A56A2685F945 /* SessionRecapViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRecapViews.swift; sourceTree = "<group>"; };
 		F4A520998CE7FF6F5E42BB27 /* AnalysisCenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisCenter.swift; sourceTree = "<group>"; };
 		F5701AB8695083D4338E4F6F /* KeychainStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainStore.swift; sourceTree = "<group>"; };
+		F6092B074F0B5B545F685D22 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F90392B95BB7D75A86F56837 /* PrepSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepSheet.swift; sourceTree = "<group>"; };
+		FD31579491B6B9F737FB01D6 /* NewFeaturesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewFeaturesTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -157,6 +172,8 @@
 		2EB15CB99CDA924D8904ECE9 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				EB46C06E28CA27C9BBFB5094 /* AdventureArchive.swift */,
+				52EF8E43582FF2B76008FBC9 /* Ambience.swift */,
 				F4A520998CE7FF6F5E42BB27 /* AnalysisCenter.swift */,
 				800B14F0E1F690F0C097648A /* ClaudeClient.swift */,
 				645DCAC3B0B26EF2772415C1 /* Dice.swift */,
@@ -173,6 +190,7 @@
 		3039810076AB3096D4978A04 /* Play */ = {
 			isa = PBXGroup;
 			children = (
+				103EE4CC1037D40CBCFAABA4 /* AmbienceView.swift */,
 				435A94EF97CFB94A8DD6BC3D /* CombatView.swift */,
 				35C33CBDE82E062E35C9CBD1 /* DiceView.swift */,
 				B625B9881B818CC894486ACA /* PartyView.swift */,
@@ -195,6 +213,7 @@
 				B53339A57BA5D908EE8D2D9A /* Resources */,
 				2EB15CB99CDA924D8904ECE9 /* Services */,
 				84FDA033DFEBB35DB6161D69 /* Views */,
+				F6092B074F0B5B545F685D22 /* Info.plist */,
 			);
 			path = Atril;
 			sourceTree = "<group>";
@@ -214,8 +233,11 @@
 				1BDBDDB88CB370AA42A3EC1C /* Components */,
 				F0C87551D9181A79EABB0693 /* AdventureDetailView.swift */,
 				A40D05A592A94C063C771686 /* AdventureMap.swift */,
+				EEB8D3933492D4460AB3233F /* GuideSearch.swift */,
 				64488C577C986FCA3A5848C8 /* ImportView.swift */,
 				34DE174BA64AB8EFDE6C9A21 /* PlayerScreen.swift */,
+				DD9FFB82FBFF1D4AFC2A870E /* PortraitViews.swift */,
+				F90392B95BB7D75A86F56837 /* PrepSheet.swift */,
 				0F1FCCB98E0B32E3014B7293 /* RootView.swift */,
 				781AE0030547FA7FAD4AF314 /* SceneEditor.swift */,
 				4E08AB34AD0BE307D1764F01 /* SettingsView.swift */,
@@ -258,6 +280,7 @@
 				BBA477C7A53BA78D7AD6BDA5 /* AIEngineTests.swift */,
 				50CF8816A178D05D274A57AB /* AtrilTests.swift */,
 				5B029C9F9825A8502A50F78B /* ImporterTests.swift */,
+				FD31579491B6B9F737FB01D6 /* NewFeaturesTests.swift */,
 				0A52E9AE7D5F87B8C610AB3B /* TableToolsTests.swift */,
 			);
 			path = AtrilTests;
@@ -369,6 +392,7 @@
 				5B204DD1A46894100620D4FE /* AIEngineTests.swift in Sources */,
 				248FBC1544EADF83C639A146 /* AtrilTests.swift in Sources */,
 				98F8394730EEC8A26B08073C /* ImporterTests.swift in Sources */,
+				0E7853E88F6C52417319CF14 /* NewFeaturesTests.swift in Sources */,
 				4A62B7BB2C10642B31E1B092 /* TableToolsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -379,9 +403,12 @@
 			files = (
 				977266CE0157B2CB5744B895 /* AIProbe.swift in Sources */,
 				F3435313F397103CE4978B20 /* Adventure.swift in Sources */,
+				ECD92C7310E27CDFC40BA832 /* AdventureArchive.swift in Sources */,
 				71F49E549BD4F37625B9BFB6 /* AdventureDetailView.swift in Sources */,
 				F158068C378F5DDAE484448A /* AdventureGuide.swift in Sources */,
 				A2CAE24DCDD892AEBE308AA6 /* AdventureMap.swift in Sources */,
+				FC40BD665A95ECB7950D3C8E /* Ambience.swift in Sources */,
+				94EFB26C1C4D0945A9436157 /* AmbienceView.swift in Sources */,
 				4899AFA2D975060D23EEA466 /* AnalysisCenter.swift in Sources */,
 				EFE96E2E55053FDFEEC114DD /* AppleIntelligence.swift in Sources */,
 				B7209BD655D53EACDD28E299 /* AtrilApp.swift in Sources */,
@@ -393,6 +420,7 @@
 				88E0C9505C2ED11FFA64E3C5 /* DiceView.swift in Sources */,
 				80C113CD40E187E56F647EDC /* GameSystem.swift in Sources */,
 				F470F4791C861D5511C0068D /* GuideDrafts.swift in Sources */,
+				F704816F15A40E12B238A0E6 /* GuideSearch.swift in Sources */,
 				0B5621895D17DCFEFB54E8FA /* GuideViews.swift in Sources */,
 				40D1632E8E3311C277FE24A7 /* HeuristicAnalyzer.swift in Sources */,
 				9F5A656CC520AEE24F51E66D /* ImportView.swift in Sources */,
@@ -403,6 +431,8 @@
 				9E757E2036B23A6B5F8B8336 /* PlayController.swift in Sources */,
 				78F839D75607C2D74A1A5EA8 /* PlayView.swift in Sources */,
 				FB22291EB55EDAD7D9226C42 /* PlayerScreen.swift in Sources */,
+				4645606B30E8FEBB5ED69905 /* PortraitViews.swift in Sources */,
+				02427D054D05062EAD478EA4 /* PrepSheet.swift in Sources */,
 				CDDBE67030849FDAC316E7F9 /* RootView.swift in Sources */,
 				B0F86482FAEEEECA5ED859C8 /* SampleAdventure.swift in Sources */,
 				46E7CAA657DBDE8788E96206 /* SceneEditor.swift in Sources */,
@@ -465,6 +495,7 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Atril/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Atril;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";
@@ -657,6 +688,7 @@
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Atril/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Atril;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.role-playing-games";

@@ -34,7 +34,8 @@ struct ImporterTests {
         return url
     }
 
-    @Test func readsScannedPDFWithOCR() async throws {
+    @Test(.timeLimit(.minutes(1)))
+    func readsScannedPDFWithOCR() async throws {
         let url = try scannedPDF(lines: [
             "La taberna de la Remedios",
             "Humo de pipa y redes colgadas de las vigas.",

@@ -10,6 +10,11 @@ Tutor de máster para iPad y Mac. Le das el guion de una aventura de **La llamad
 6. **Combate**: orden de iniciativa (DES en Cthulhu, d20 + modificador en D&D), asaltos, turnos que saltan a los caídos y PV de enemigos sacados de las estadísticas del guion (`StatBlock`); los PV de los personajes están sincronizados con su ficha.
 7. **Mapa de la aventura**: las escenas como diagrama de flujo (camino más largo siguiendo el orden del guion; atajos en arco por encima y vueltas atrás discontinuas por debajo), con el progreso de la partida.
 8. **Resumen de sesión**: al cerrar la mesa, estadísticas, un texto para compartir con los jugadores (redactado por la IA solo con lo que ellos saben) y los pendientes del máster; al empezar la siguiente sesión, un «Previamente…» para leer.
+9. **Retratos de PNJ**: se crean en el dispositivo con Image Playground (iPadOS 18.1 / macOS 15.1 con Apple Intelligence) a partir de su aspecto y la época, o se elige una imagen; se ven en fichas, escenas y referencia, y se enseñan a los jugadores sin revelar nada más que el nombre. Se guardan por nombre (`Portrait`), así que sobreviven a un nuevo análisis.
+10. **Ambientación sonora**: mar, lluvia, viento, fuego, cripta y latido, generados en tiempo real con `AVAudioEngine` (sin archivos), combinables y con fundidos; la app sugiere el de cada escena y puede cambiarlo sola al pasar de escena.
+11. **Búsqueda** (⌘F): escenas, PNJ, pistas y texto del guion a la vez, sin tildes ni mayúsculas.
+12. **Hoja de preparación en PDF**: A4 maquetado sin partir escenas, para la próxima sesión (desde donde se quedó la mesa), una sesión del plan o la aventura entera, con el «Previamente…», cada escena resumida y la referencia de PNJ con retratos. Se comparte o se imprime.
+13. **Exportar e importar** (`.atril`): guion, guía, sesiones y retratos en un archivo JSON para pasar del Mac al iPad por AirDrop o Archivos, o como copia de seguridad.
 
 **Sin cuentas ni pagos**: la IA va integrada. Incluye una aventura corta original de ejemplo, *La luz de Punta Negra*.
 
@@ -50,7 +55,7 @@ Los PDF escaneados se leen con OCR (Vision) en el propio dispositivo.
 
 ## Depuración y capturas (DEBUG)
 
-- `-seedDemo` crea la aventura de ejemplo con una sesión a medias; `-openPlay` abre la mesa; `-openPanel dice|party|combat|combatstrip|map|end|handout|document`; `-openTab plan|map|scenes…`; `-ask "pregunta"`.
+- `-seedDemo` crea la aventura de ejemplo con una sesión a medias; `-openPlay` abre la mesa; `-openPanel dice|party|combat|combatstrip|map|end|handout|document|ambience|search` (en la mesa) o `prep` (en la guía); `-openTab plan|map|scenes|npcs…`; `-ask "pregunta"`.
 - `-seedImport` importa el guion de ejemplo como un archivo nuevo (guía básica + IA).
 - `-probeAI` analiza el ejemplo con cada modelo de Apple disponible, pregunta al tutor e imprime tiempos y resultados (`PROBE_TIERS=onDevice` para elegir).
 - `-hasAPIKey YES` simula tener clave de Claude.

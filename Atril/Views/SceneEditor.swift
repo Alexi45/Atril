@@ -173,6 +173,7 @@ struct SceneEditor: View {
 struct PlanView: View {
     @Bindable var adventure: Adventure
     let guide: AdventureGuide
+    @State private var showPrepSheet = false
 
     var body: some View {
         let plan = SessionPlanner.plan(guide, hours: adventure.sessionHours)
@@ -197,8 +198,16 @@ struct PlanView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                Button {
+                    showPrepSheet = true
+                } label: {
+                    Label("Hoja de preparación para imprimir", systemImage: "doc.richtext")
+                }
+                .buttonStyle(.bordered)
+                .tint(adventure.system.accent)
             }
             .card()
+            .sheet(isPresented: $showPrepSheet) { PrepSheetView(adventure: adventure, guide: guide) }
 
             ForEach(plan) { session in
                 VStack(alignment: .leading, spacing: 10) {

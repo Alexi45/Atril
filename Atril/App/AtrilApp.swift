@@ -23,7 +23,7 @@ struct AtrilApp: App {
             RootView()
                 .environment(analysis)
         }
-        .modelContainer(for: [Adventure.self, PlaySession.self])
+        .modelContainer(for: [Adventure.self, PlaySession.self, Portrait.self])
         #if os(macOS)
         .defaultSize(width: 1280, height: 820)
         #endif

@@ -12,6 +12,9 @@ struct PlayView: View {
     @State private var showEnd = false
     @State private var showCombat = false
     @State private var showMap = false
+    @State private var showSearch = false
+    @State private var showAmbience = false
+    @AppStorage(AmbiencePlayer.followKey) private var ambienceFollowsScene = false
     @State private var debugHandout: Handout?
     @Environment(\.horizontalSizeClass) private var sizeClass
 
@@ -40,6 +43,11 @@ struct PlayView: View {
             .navigationBarTitleDisplayMode(.inline)
             #endif
             .toolbar { toolbar }
+            .sheet(isPresented: $showSearch) {
+                GuideSearchView(guide: controller.guide, index: controller.index, tint: controller.system.accent) { scene in
+                    withAnimation(.snappy) { controller.go(to: scene.id) }
+                }
+            }
             .sheet(isPresented: $showMap) {
                 if let guide = controller.guide {
                     NavigationStack {
@@ -110,11 +118,22 @@ struct PlayView: View {
                     debugHandout = Handout(title: clue.title, body: clue.detail, style: .document)
                 }
                 showMap = panel == "map"
+                showAmbience = panel == "ambience"
+                showSearch = panel == "search"
                 if let question { controller.send(question) }
             }
             #endif
         }
-        .onDisappear { controller.pauseClock() }
+        .onDisappear {
+            controller.pauseClock()
+            AmbiencePlayer.shared.stopAll()
+        }
+        .onChange(of: controller.currentSceneID) {
+            // El ambiente acompaña a la escena si el máster lo ha pedido.
+            guard ambienceFollowsScene, let scene = controller.currentScene,
+                  let suggestion = Ambience.suggestion(for: scene) else { return }
+            AmbiencePlayer.shared.set([suggestion])
+        }
         .handoutPresenter($debugHandout)
     }
 
@@ -143,6 +162,19 @@ struct PlayView: View {
 
         ToolbarItemGroup(placement: .primaryAction) {
             ClockButton(controller: controller)
+
+            Button("Buscar", systemImage: "magnifyingglass") { showSearch = true }
+                .keyboardShortcut("f", modifiers: .command)
+
+            Button("Ambiente", systemImage: AmbiencePlayer.shared.active.isEmpty ? "speaker.wave.2" : "speaker.wave.3.fill") {
+                showAmbience.toggle()
+            }
+            .keyboardShortcut("b", modifiers: .command)
+            .popover(isPresented: $showAmbience) {
+                AmbienceView(scene: controller.currentScene, tint: controller.system.accent)
+                    .frame(idealWidth: 400, idealHeight: 520)
+                    .presentationCompactAdaptation(.sheet)
+            }
 
             if controller.guide != nil {
                 Button("Mapa", systemImage: "point.3.connected.trianglepath.dotted") { showMap = true }
@@ -483,7 +515,7 @@ struct ReferenceRail: View {
         }
         .sheet(item: $shownNPC) { npc in
             NavigationStack {
-                ScrollView { NPCCard(npc: npc, framed: false).padding(24) }
+                ScrollView { NPCCard(npc: npc, framed: false, adventure: controller.adventure).padding(24) }
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Listo") { shownNPC = nil } } }
             }
             .presentationDetents([.medium, .large])
@@ -540,8 +572,8 @@ struct ReferenceRail: View {
         ForEach(guide.npcs.sorted { here.contains($0.id) && !here.contains($1.id) }) { npc in
             Button { shownNPC = npc } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .foregroundStyle(here.contains(npc.id) ? controller.system.accent : .secondary)
+                    PortraitAvatar(name: npc.name, data: controller.adventure.portrait(for: npc.name), size: 30,
+                                   tint: here.contains(npc.id) ? controller.system.accent : .secondary)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(npc.name).font(.callout.weight(.medium))
                         Text(npc.role).font(.caption).foregroundStyle(.secondary).lineLimit(2)

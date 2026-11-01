@@ -6,6 +6,7 @@ struct SceneContent: View {
     let guide: AdventureGuide
     let system: GameSystem
     var controller: PlayController?
+    var adventure: Adventure?
     @State private var shownNPC: AdventureGuide.NPC?
 
     var body: some View {
@@ -39,15 +40,19 @@ struct SceneContent: View {
                             Button {
                                 shownNPC = npc
                             } label: {
-                                Label(npc.name, systemImage: "person.crop.circle")
-                                    .font(.callout.weight(.medium))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 7)
-                                    .background(Color.primary.opacity(0.06), in: Capsule())
+                                HStack(spacing: 6) {
+                                    PortraitAvatar(name: npc.name, data: portraitOwner?.portrait(for: npc.name), size: 24, tint: system.accent)
+                                    Text(npc.name)
+                                }
+                                .font(.callout.weight(.medium))
+                                .padding(.leading, 5)
+                                .padding(.trailing, 12)
+                                .padding(.vertical, 5)
+                                .background(Color.primary.opacity(0.06), in: Capsule())
                             }
                             .buttonStyle(.plain)
                             .popover(isPresented: Binding(get: { shownNPC == npc }, set: { if !$0 { shownNPC = nil } })) {
-                                ScrollView { NPCCard(npc: npc, framed: false).padding(20) }
+                                ScrollView { NPCCard(npc: npc, framed: false, adventure: portraitOwner).padding(20) }
                                     .frame(idealWidth: 380, maxHeight: 520)
                                     .presentationCompactAdaptation(.sheet)
                             }
@@ -111,6 +116,8 @@ struct SceneContent: View {
             }
         }
     }
+
+    private var portraitOwner: Adventure? { adventure ?? controller?.adventure }
 
     @ViewBuilder
     private func block<Content: View>(_ title: String, symbol: String, tint: Color = .secondary, @ViewBuilder content: () -> Content) -> some View {
@@ -209,12 +216,19 @@ private struct ExitRow: View {
 struct NPCCard: View {
     let npc: AdventureGuide.NPC
     var framed = true
+    /// Con la aventura, la ficha muestra el retrato y permite crearlo o cambiarlo.
+    var adventure: Adventure?
 
     var body: some View {
         let content = VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(npc.name).font(.headline)
-                Text(npc.role).font(.subheadline).foregroundStyle(.secondary)
+            HStack(spacing: 12) {
+                if let adventure {
+                    PortraitControl(npc: npc, adventure: adventure, size: 56)
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(npc.name).font(.headline)
+                    Text(npc.role).font(.subheadline).foregroundStyle(.secondary)
+                }
             }
             if !npc.look.isEmpty { field("Aspecto", npc.look, symbol: "eye") }
             if !npc.motivation.isEmpty { field("Quiere", npc.motivation, symbol: "target") }

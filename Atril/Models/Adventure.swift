@@ -22,6 +22,8 @@ final class Adventure {
     var sessionHours: Double = 3
     @Relationship(deleteRule: .cascade, inverse: \PlaySession.adventure)
     var sessions: [PlaySession] = []
+    @Relationship(deleteRule: .cascade, inverse: \Portrait.adventure)
+    var portraits: [Portrait] = []
 
     init(title: String, system: GameSystem, script: String, sourceFileName: String? = nil) {
         self.title = title
@@ -61,10 +63,44 @@ final class Adventure {
 
     var sortedSessions: [PlaySession] { sessions.sorted { $0.lastPlayedAt > $1.lastPlayedAt } }
 
+    /// Retrato de un PNJ, buscado por nombre (con o sin tratamiento).
+    func portrait(for name: String) -> Data? {
+        portraits.first { Prose.sameName($0.npcName, name) }?.imageData
+    }
+
+    func setPortrait(_ data: Data?, for name: String) {
+        if let existing = portraits.first(where: { Prose.sameName($0.npcName, name) }) {
+            if let data {
+                existing.imageData = data
+            } else {
+                portraits.removeAll { $0 === existing }
+                modelContext?.delete(existing)
+            }
+        } else if let data {
+            let portrait = Portrait(npcName: name, imageData: data)
+            modelContext?.insert(portrait)
+            portraits.append(portrait)
+        }
+        updatedAt = .now
+    }
+
     var wordCount: Int { script.split(whereSeparator: \.isWhitespace).count }
 
     static func hash(_ text: String) -> String {
         SHA256.hash(data: Data(text.utf8)).prefix(12).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
+/// Retrato de un PNJ. Va por nombre y no por id: así sobrevive a un nuevo análisis del guion.
+@Model
+final class Portrait {
+    var npcName = ""
+    @Attribute(.externalStorage) var imageData = Data()
+    var adventure: Adventure?
+
+    init(npcName: String, imageData: Data) {
+        self.npcName = npcName
+        self.imageData = imageData
     }
 }
 

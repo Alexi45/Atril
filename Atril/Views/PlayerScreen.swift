@@ -2,12 +2,13 @@ import SwiftUI
 
 /// Lo que se enseña a los jugadores: un texto narrado o un documento del juego.
 struct Handout: Codable, Hashable, Identifiable {
-    enum Style: String, Codable { case narration, document }
+    enum Style: String, Codable { case narration, document, portrait }
 
     var id = UUID()
     var title: String
     var body: String
     var style: Style
+    var imageData: Data?
 }
 
 /// Pantalla para girar el iPad hacia la mesa (o llevar a otra pantalla en el Mac):
@@ -46,7 +47,7 @@ struct PlayerScreenView: View {
     @ViewBuilder
     private var background: some View {
         switch handout.style {
-        case .narration:
+        case .narration, .portrait:
             RadialGradient(colors: [Color(red: 0.10, green: 0.12, blue: 0.13), .black], center: .center, startRadius: 40, endRadius: 900)
         case .document:
             LinearGradient(colors: [Color(red: 0.16, green: 0.12, blue: 0.09), Color(red: 0.07, green: 0.05, blue: 0.04)],
@@ -69,6 +70,22 @@ struct PlayerScreenView: View {
                     .font(.system(size: 34, weight: .regular, design: .serif))
                     .lineSpacing(10)
                     .multilineTextAlignment(.center)
+                    .foregroundStyle(Color(red: 0.95, green: 0.92, blue: 0.86))
+            }
+        case .portrait:
+            VStack(spacing: 24) {
+                if let data = handout.imageData, let image = Image(portraitData: data) {
+                    image
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: 560, maxHeight: 560)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .strokeBorder(Color(red: 0.85, green: 0.72, blue: 0.48).opacity(0.6), lineWidth: 2))
+                        .shadow(color: .black.opacity(0.6), radius: 30, y: 10)
+                }
+                Text(handout.title)
+                    .font(.system(size: 34, weight: .semibold, design: .serif))
                     .foregroundStyle(Color(red: 0.95, green: 0.92, blue: 0.86))
             }
         case .document:

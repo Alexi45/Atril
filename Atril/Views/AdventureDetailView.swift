@@ -12,6 +12,11 @@ struct AdventureDetailView: View {
     @State private var editingScript = false
     @State private var showSettings = false
     @State private var editingScene: AdventureGuide.Scene?
+    @State private var exportFile: AdventureFile?
+    @State private var showExport = false
+    @State private var exportMessage: String?
+    @State private var searchIndex: ScriptIndex?
+    @State private var showPrepSheet = false
 
     enum Tab: String, CaseIterable, Identifiable {
         case overview = "Resumen"
@@ -49,6 +54,12 @@ struct AdventureDetailView: View {
             // Capturas: `-openTab plan|scenes|npcs|clues|script`.
             if let name = UserDefaults.standard.string(forKey: "openTab"),
                let match = Tab.allCases.first(where: { "\($0)" == name }) { tab = match }
+            if UserDefaults.standard.string(forKey: "openPanel") == "prep" {
+                Task {
+                    try? await Task.sleep(for: .seconds(1))
+                    showPrepSheet = true
+                }
+            }
         }
         #endif
         .navigationTitle(adventure.title)
@@ -56,6 +67,32 @@ struct AdventureDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .sheet(isPresented: $showSettings) { NavigationStack { SettingsView() } }
+        .sheet(isPresented: Binding(get: { searchIndex != nil }, set: { if !$0 { searchIndex = nil } })) {
+            if let searchIndex {
+                GuideSearchView(guide: adventure.guide, index: searchIndex, tint: adventure.system.accent) { scene in
+                    expandedScenes.insert(scene.id)
+                    tab = .scenes
+                }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Buscar", systemImage: "magnifyingglass") { searchIndex = ScriptIndex(script: adventure.script) }
+                    .keyboardShortcut("f", modifiers: .command)
+            }
+        }
+        .sheet(isPresented: $showPrepSheet) {
+            if let guide = adventure.guide { PrepSheetView(adventure: adventure, guide: guide) }
+        }
+        .fileExporter(isPresented: $showExport, item: exportFile, contentTypes: [.atrilAdventure],
+                      defaultFilename: AdventureArchive.fileName(for: adventure.title)) { result in
+            if case .failure(let error) = result { exportMessage = error.localizedDescription }
+        }
+        .alert("No se ha podido exportar", isPresented: Binding(get: { exportMessage != nil }, set: { if !$0 { exportMessage = nil } })) {
+            Button("Aceptar", role: .cancel) {}
+        } message: {
+            Text(exportMessage ?? "")
+        }
         .sheet(item: $editingScene) { scene in
             SceneEditor(scene: scene, guide: adventure.guide, isNew: adventure.guide?.scene(scene.id) == nil) { result in
                 switch result {
@@ -117,6 +154,11 @@ struct AdventureDetailView: View {
                         if adventure.guide != nil {
                             Button("Añadir escena", systemImage: "plus") { editingScene = adventure.guide?.blankScene() }
                         }
+                        Divider()
+                        if adventure.guide != nil {
+                            Button("Hoja de preparación…", systemImage: "doc.richtext") { showPrepSheet = true }
+                        }
+                        Button("Exportar aventura…", systemImage: "square.and.arrow.up") { export() }
                     } label: {
                         Image(systemName: "ellipsis.circle").font(.title3)
                     }
@@ -158,6 +200,16 @@ struct AdventureDetailView: View {
         }
         context.insert(session)
         return session
+    }
+
+    /// Guion, guía, sesiones y retratos en un archivo .atril para abrirlo en otro dispositivo.
+    private func export() {
+        do {
+            exportFile = AdventureFile(archive: try AdventureArchive(adventure).encoded(), title: adventure.title)
+            showExport = true
+        } catch {
+            exportMessage = error.localizedDescription
+        }
     }
 
     private func reanalyze() {
@@ -368,7 +420,7 @@ struct AdventureDetailView: View {
                     .buttonStyle(.plain)
 
                     if expanded {
-                        SceneContent(scene: scene, guide: guide, system: adventure.system)
+                        SceneContent(scene: scene, guide: guide, system: adventure.system, adventure: adventure)
                             .padding(.leading, 40)
                         HStack(spacing: 8) {
                             Button("Editar", systemImage: "pencil") { editingScene = scene }
@@ -396,7 +448,7 @@ struct AdventureDetailView: View {
 
     private func npcs(_ guide: AdventureGuide) -> some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 14, alignment: .top)], spacing: 14) {
-            ForEach(guide.npcs) { NPCCard(npc: $0) }
+            ForEach(guide.npcs) { NPCCard(npc: $0, adventure: adventure) }
         }
     }
 
