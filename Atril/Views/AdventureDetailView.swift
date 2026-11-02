@@ -17,6 +17,8 @@ struct AdventureDetailView: View {
     @State private var exportMessage: String?
     @State private var searchIndex: ScriptIndex?
     @State private var showPrepSheet = false
+    @State private var newNPC: AdventureGuide.NPC?
+    @State private var replacement: AIBackend?
 
     enum Tab: String, CaseIterable, Identifiable {
         case overview = "Resumen"
@@ -81,6 +83,19 @@ struct AdventureDetailView: View {
                     .keyboardShortcut("f", modifiers: .command)
             }
         }
+        .sheet(item: $newNPC) { npc in
+            NPCEditor(npc: npc, isNew: true) { result in
+                if case .save(let edited) = result { adventure.editGuide { $0.upsert(edited) } }
+            }
+        }
+        .confirmationDialog("¿Sustituir la guía?", isPresented: Binding(get: { replacement != nil }, set: { if !$0 { replacement = nil } }), titleVisibility: .visible) {
+            Button("Sustituir y perder mis cambios", role: .destructive) {
+                if let backend = replacement { prepareGuide(with: backend) }
+                replacement = nil
+            }
+        } message: {
+            Text("Has editado esta guía a mano. Si la vuelves a preparar, tus cambios se perderán.")
+        }
         .sheet(isPresented: $showPrepSheet) {
             if let guide = adventure.guide { PrepSheetView(adventure: adventure, guide: guide) }
         }
@@ -96,13 +111,10 @@ struct AdventureDetailView: View {
         .sheet(item: $editingScene) { scene in
             SceneEditor(scene: scene, guide: adventure.guide, isNew: adventure.guide?.scene(scene.id) == nil) { result in
                 switch result {
-                case .save(let edited, let coreClueIDs):
+                case .save(let edited, let clues):
                     adventure.editGuide { guide in
                         guide.upsert(edited)
-                        let inScene = Set(guide.clues(in: edited).map(\.id))
-                        for index in guide.clues.indices where inScene.contains(guide.clues[index].id) {
-                            guide.clues[index].isCore = coreClueIDs.contains(guide.clues[index].id)
-                        }
+                        guide.setClues(clues, forScene: edited.id)
                     }
                 case .delete: adventure.editGuide { $0.removeScene(scene.id) }
                 }
@@ -148,9 +160,9 @@ struct AdventureDetailView: View {
                 if !analysis.isRunning(adventure) {
                     Menu {
                         if AIBackend.current != .basic {
-                            Button("Preparar la guía con \(AIBackend.current.label)", systemImage: "sparkles") { reanalyze() }
+                            Button("Preparar la guía con \(AIBackend.current.inSentence)", systemImage: "sparkles") { reanalyze() }
                         }
-                        Button("Reorganizar sin IA", systemImage: "arrow.clockwise") { analysis.organizeBasic(adventure) }
+                        Button("Reorganizar sin IA", systemImage: "arrow.clockwise") { request(.basic) }
                         if adventure.guide != nil {
                             Button("Añadir escena", systemImage: "plus") { editingScene = adventure.guide?.blankScene() }
                         }
@@ -213,18 +225,52 @@ struct AdventureDetailView: View {
     }
 
     private func reanalyze() {
-        analysis.start(adventure)
+        request(.current)
+    }
+
+    /// Volver a preparar la guía; si se ha editado a mano, antes se pregunta.
+    private func request(_ backend: AIBackend) {
+        if adventure.guideEditedAt != nil {
+            replacement = backend
+        } else {
+            prepareGuide(with: backend)
+        }
+    }
+
+    private func prepareGuide(with backend: AIBackend) {
+        if backend == .basic {
+            analysis.organizeBasic(adventure)
+        } else {
+            adventure.guideEditedAt = nil
+            analysis.start(adventure, backend: backend)
+        }
     }
 
     // MARK: Estado del análisis
 
     @ViewBuilder
     private var analysisStatus: some View {
-        if let job = analysis.job(for: adventure) {
+        if adventure.pendingGuideData != nil {
+            VStack(alignment: .leading, spacing: 10) {
+                Label("La IA ha terminado, pero has editado la guía mientras tanto", systemImage: "sparkles")
+                    .font(.headline)
+                Text("¿Con cuál te quedas? Si usas la de la IA, se perderán los cambios que has hecho a mano.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Button("Quedarme con la mía") { analysis.discardPendingGuide(of: adventure) }
+                        .buttonStyle(.borderedProminent)
+                    Button("Usar la de la IA", role: .destructive) { analysis.acceptPendingGuide(of: adventure) }
+                        .buttonStyle(.bordered)
+                }
+                .tint(adventure.system.accent)
+            }
+            .card()
+        } else if let job = analysis.job(for: adventure) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 12) {
                     Image(systemName: job.backend.symbol).foregroundStyle(adventure.system.accent)
-                    Text("\(job.backend.label) está preparando la guía").font(.headline)
+                    Text("\(job.backend.atSentenceStart) está preparando la guía").font(.headline)
                     Spacer()
                     Button("Cancelar") { analysis.cancel(adventure) }.buttonStyle(.bordered).controlSize(.small)
                 }
@@ -281,7 +327,7 @@ struct AdventureDetailView: View {
                     Text("Guía organizada sin IA").font(.callout.weight(.semibold))
                     Text(backend == .basic
                          ? "Se ha hecho leyendo la estructura del guion. Revisa las escenas y edítalas si hace falta. \(AppleAI.status.unavailableReason ?? "")"
-                         : "Se ha hecho leyendo la estructura del guion. La \(backend.label) puede leerlo entero y mejorarla.")
+                         : "Se ha hecho leyendo la estructura del guion. \(backend.atSentenceStart) puede leerlo entero y mejorarla.")
                         .font(.callout)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -449,6 +495,12 @@ struct AdventureDetailView: View {
     private func npcs(_ guide: AdventureGuide) -> some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 280), spacing: 14, alignment: .top)], spacing: 14) {
             ForEach(guide.npcs) { NPCCard(npc: $0, adventure: adventure) }
+            Button {
+                newNPC = guide.blankNPC()
+            } label: {
+                Label("Añadir PNJ", systemImage: "plus").frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
         }
     }
 

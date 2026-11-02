@@ -1,6 +1,21 @@
 import SwiftUI
 
 extension Color {
+    /// Un tono para el modo claro y otro para el oscuro, en componentes sRGB.
+    init(light: (red: Double, green: Double, blue: Double), dark: (red: Double, green: Double, blue: Double)) {
+        #if os(iOS)
+        self.init(uiColor: UIColor { traits in
+            let tone = traits.userInterfaceStyle == .dark ? dark : light
+            return UIColor(red: tone.red, green: tone.green, blue: tone.blue, alpha: 1)
+        })
+        #else
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let tone = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? dark : light
+            return NSColor(srgbRed: tone.red, green: tone.green, blue: tone.blue, alpha: 1)
+        })
+        #endif
+    }
+
     /// Fondo general de las pantallas.
     static var canvas: Color {
         #if os(iOS)

@@ -5,7 +5,8 @@ import SwiftUI
 struct PlayView: View {
     let onExit: () -> Void
     @State private var controller: PlayController
-    @State private var showTutor = true
+    @State private var showTutor = false
+    @State private var tutorPlaced = false
     @State private var showDice = false
     @State private var showParty = false
     @State private var showReference = false
@@ -17,6 +18,8 @@ struct PlayView: View {
     @AppStorage(AmbiencePlayer.followKey) private var ambienceFollowsScene = false
     @State private var debugHandout: Handout?
     @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private static let widthForOpenTutor: CGFloat = 900
 
     init(session: PlaySession, onExit: @escaping () -> Void) {
         self.onExit = onExit
@@ -90,9 +93,17 @@ struct PlayView: View {
             }
         }
         .tint(controller.system.accent)
+        // En una pantalla estrecha el tutor taparía la escena: ahí empieza cerrado.
+        .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+            guard !tutorPlaced, width > 0 else { return }
+            tutorPlaced = true
+            showTutor = width >= Self.widthForOpenTutor
+        }
         .onChange(of: controller.adventure.guideData) { controller.reloadGuide() }
         .onAppear {
             controller.begin()
+            // En mesa la pantalla no se apaga: nadie va a estar tocándola todo el rato.
+            KeepAwake.acquire()
             #if DEBUG
             // Capturas: `-openPanel dice|party` abre ese panel al entrar. Se espera a que la
             // barra esté en pantalla: un popover sin vista de origen hace abortar a UIKit.
@@ -119,6 +130,7 @@ struct PlayView: View {
                 }
                 showMap = panel == "map"
                 showAmbience = panel == "ambience"
+                if panel == "tables" { showDice = true }
                 showSearch = panel == "search"
                 if let question { controller.send(question) }
             }
@@ -127,6 +139,7 @@ struct PlayView: View {
         .onDisappear {
             controller.pauseClock()
             AmbiencePlayer.shared.stopAll()
+            KeepAwake.release()
         }
         .onChange(of: controller.currentSceneID) {
             // El ambiente acompaña a la escena si el máster lo ha pedido.

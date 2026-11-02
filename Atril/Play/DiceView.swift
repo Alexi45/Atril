@@ -13,6 +13,17 @@ struct DiceView: View {
     @State private var poolCount = 1
     @State private var history: [Roll] = []
     @State private var logged: Set<UUID> = []
+    @State private var mode: Mode = {
+        #if DEBUG
+        if UserDefaults.standard.string(forKey: "openPanel") == "tables" { return .tables }
+        #endif
+        return .dice
+    }()
+
+    enum Mode: String, CaseIterable, Identifiable {
+        case dice = "Dados", tables = "Tablas"
+        var id: String { rawValue }
+    }
 
     private let dice = Dice()
 
@@ -28,13 +39,23 @@ struct DiceView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
-                switch system {
-                case .cthulhu: cthulhuCheck
-                case .dnd: dndCheck
-                case .other: EmptyView()
+                Picker("Herramienta", selection: $mode) {
+                    ForEach(Mode.allCases) { Text($0.rawValue).tag($0) }
                 }
-                quickDice
-                if !history.isEmpty { historyList }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                switch mode {
+                case .tables:
+                    TablesView(system: system, onLog: onLog)
+                case .dice:
+                    switch system {
+                    case .cthulhu: cthulhuCheck
+                    case .dnd: dndCheck
+                    case .other: EmptyView()
+                    }
+                    quickDice
+                    if !history.isEmpty { historyList }
+                }
             }
             .padding(18)
         }
@@ -209,5 +230,68 @@ struct DiceView: View {
         case .awful: .red
         case .neutral: .primary
         }
+    }
+}
+
+/// Tablas para improvisar: una pulsación y ya hay fobia, rumor, giro o botín.
+private struct TablesView: View {
+    let system: GameSystem
+    let onLog: (String) -> Void
+    @State private var result: Result?
+    @State private var logged = false
+
+    struct Result: Equatable {
+        var table: RandomTable
+        var value: String
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if let result {
+                VStack(alignment: .leading, spacing: 10) {
+                    SectionLabel(title: result.table.title, symbol: result.table.symbol, tint: system.accent)
+                    Text(result.value)
+                        .font(.system(.title3, design: .serif))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .contentTransition(.opacity)
+                    HStack(spacing: 8) {
+                        Button("Otra vez", systemImage: "arrow.clockwise") { roll(result.table) }
+                        Button(logged ? "Anotado" : "Anotar", systemImage: logged ? "checkmark" : "square.and.pencil") {
+                            onLog("\(result.table.title): \(result.value)")
+                            logged = true
+                        }
+                        .disabled(logged)
+                        Button("Narrar", systemImage: "speaker.wave.2") {
+                            Narrator.shared.toggle(result.value, id: "table-result")
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .card()
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 8)], spacing: 8) {
+                ForEach(RandomTables.tables(for: system)) { table in
+                    Button {
+                        roll(table)
+                    } label: {
+                        Label(table.title, systemImage: table.symbol)
+                            .font(.callout.weight(.medium))
+                            .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        }
+    }
+
+    private func roll(_ table: RandomTable) {
+        var value = table.roll()
+        // Que «Otra vez» dé de verdad otro resultado.
+        if table.entries.count > 1, value == result?.value, result?.table == table {
+            while value == result?.value { value = table.roll() }
+        }
+        withAnimation(.snappy) { result = Result(table: table, value: value) }
+        logged = false
     }
 }

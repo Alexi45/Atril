@@ -216,8 +216,9 @@ private struct ExitRow: View {
 struct NPCCard: View {
     let npc: AdventureGuide.NPC
     var framed = true
-    /// Con la aventura, la ficha muestra el retrato y permite crearlo o cambiarlo.
+    /// Con la aventura, la ficha muestra el retrato y permite crearlo o cambiarlo, y editarla.
     var adventure: Adventure?
+    @State private var editing = false
 
     var body: some View {
         let content = VStack(alignment: .leading, spacing: 10) {
@@ -228,6 +229,25 @@ struct NPCCard: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(npc.name).font(.headline)
                     Text(npc.role).font(.subheadline).foregroundStyle(.secondary)
+                }
+                if adventure != nil {
+                    Spacer(minLength: 0)
+                    Button { editing = true } label: { Image(systemName: "pencil") }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Editar a \(npc.name)")
+                        .sheet(isPresented: $editing) {
+                            NPCEditor(npc: npc, isNew: false) { result in
+                                switch result {
+                                case .save(let edited):
+                                    if edited.name != npc.name { adventure?.renamePortrait(from: npc.name, to: edited.name) }
+                                    adventure?.editGuide { $0.upsert(edited) }
+                                case .delete:
+                                    adventure?.setPortrait(nil, for: npc.name)
+                                    adventure?.editGuide { $0.removeNPC(npc.id) }
+                                }
+                            }
+                        }
                 }
             }
             if !npc.look.isEmpty { field("Aspecto", npc.look, symbol: "eye") }

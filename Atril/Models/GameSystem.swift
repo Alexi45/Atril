@@ -39,11 +39,13 @@ enum GameSystem: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// En oscuro, más luminoso para que el texto de los botones se lea sobre su propio
+    /// tinte, sin llegar a que el texto blanco de los botones principales se pierda.
     var accent: Color {
         switch self {
-        case .cthulhu: Color(red: 0.16, green: 0.50, blue: 0.45)
-        case .dnd: Color(red: 0.70, green: 0.20, blue: 0.20)
-        case .other: Color(red: 0.33, green: 0.36, blue: 0.70)
+        case .cthulhu: Color(light: (0.16, 0.50, 0.45), dark: (0.22, 0.63, 0.57))
+        case .dnd: Color(light: (0.70, 0.20, 0.20), dark: (0.90, 0.38, 0.36))
+        case .other: Color(light: (0.33, 0.36, 0.70), dark: (0.50, 0.54, 0.92))
         }
     }
 

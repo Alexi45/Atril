@@ -106,12 +106,12 @@ enum HeuristicAnalyzer {
             let text = line.trimmed
             if text.hasPrefix(">") {
                 readAloud.append(text.trimmingCharacters(in: CharacterSet(charactersIn: "> ")))
+                readNext = false
             } else if readNext, !text.isEmpty {
                 readAloud.append(text)
                 readNext = false
             } else {
-                let folded = Prose.fold(text)
-                if folded.hasPrefix("lee en voz alta") || folded.hasPrefix("leed en voz alta") || folded.hasPrefix("para leer") {
+                if isReadAloudCue(text) {
                     readNext = true
                 } else {
                     rest.append(line)
@@ -135,6 +135,16 @@ enum HeuristicAnalyzer {
         scene.tips = tips(for: scene, system: system)
         scene.ifStuck = ifStuck(for: scene)
         return scene
+    }
+
+    /// Frase que anuncia el texto para leer: «Cuando lleguen, léeles lo siguiente:».
+    static func isReadAloudCue(_ text: String) -> Bool {
+        let folded = Prose.fold(text)
+        guard text.count < 140 else { return false }
+        let cues = ["lee en voz alta", "leed en voz alta", "leer en voz alta", "para leer", "leeles", "leedles",
+                    "lee lo siguiente", "leed lo siguiente", "lee a los jugadores", "leed a los jugadores",
+                    "leer a los jugadores", "lee o parafrasea", "leed o parafrasead", "lee este texto"]
+        return cues.contains { folded.contains($0) }
     }
 
     static func cleanTitle(_ heading: String) -> String {
@@ -271,7 +281,7 @@ enum HeuristicAnalyzer {
             return true
         }
 
-        struct Candidate { var name: String; var count = 0; var score = 0; var firstSentence = ""; var apposition = "" }
+        struct Candidate { var name: String; var count = 0; var score = 0; var firstSentence = ""; var apposition = ""; var hasHonorific = false }
         var candidates: [String: Candidate] = [:]
         let pattern = #"(?:\b(?:don|doña|padre|madre|doctora?|señora?|señorita|fray|sor|capitán|inspectora?|profesora?|tío|tía)\s+)?\p{Lu}\p{Ll}+(?:\s+(?:de\s+)?\p{Lu}\p{Ll}+){0,2}"#
         let regex = try? NSRegularExpression(pattern: pattern)
@@ -301,7 +311,10 @@ enum HeuristicAnalyzer {
             var candidate = candidates[key] ?? Candidate(name: hasHonorific ? raw : core)
             candidate.count += 1
             candidate.score += score
-            if hasHonorific { candidate.name = raw.capitalizedFirst }
+            if hasHonorific {
+                candidate.name = raw.capitalizedFirst
+                candidate.hasHonorific = true
+            }
             // «Xuacu, el único superviviente del naufragio, …» → papel del personaje.
             if candidate.apposition.isEmpty,
                let role = after.range(of: #"^\s*,\s*(el|la|un|una|su)?\s*[^,.;:()]{3,90}(?=[,.;:])"#, options: .regularExpression) {
@@ -326,7 +339,8 @@ enum HeuristicAnalyzer {
             var score = candidate.score
             if words.contains(where: { (personal[$0] ?? 0) > 0 }) || (personal[key] ?? 0) > 0 { score += 2 }
             if nonPersonal.contains(key) { score -= 2 }
-            guard candidate.count >= 2 || score >= 3, score >= 3 else { continue }
+            // Una sola mención sin tratamiento no basta: suele ser un lugar («Galicia, invierno de 1926»).
+            guard candidate.count >= 2 || candidate.hasHonorific, score >= 3 else { continue }
             if let index = characters.firstIndex(where: { Prose.sameName($0.name, candidate.name) }) {
                 characters[index].name = characters[index].name.longer(candidate.name)
                 continue
@@ -369,8 +383,8 @@ enum HeuristicAnalyzer {
 
     static func endings(in text: String) -> [AdventureGuide.Ending] {
         let items = text.components(separatedBy: "\n").map(\.trimmed).filter { $0.hasPrefix("-") || $0.hasPrefix("•") || $0.hasPrefix("*") }
-        let source = items.isEmpty ? Prose.sentences(plain(text)) : items
-        return source.prefix(5).map { item in
+        if items.isEmpty { return proseEndings(text) }
+        return items.prefix(5).map { item in
             let clean = item.trimmingCharacters(in: CharacterSet(charactersIn: "-•* ")).trimmed
             let parts = clean.split(separator: ":", maxSplits: 1).map { String($0).trimmed }
             return AdventureGuide.Ending(
@@ -379,6 +393,25 @@ enum HeuristicAnalyzer {
                 outcome: parts.count == 2 ? parts[1] : clean
             )
         }
+    }
+
+    /// Desenlaces en prosa: cada «Si…» empieza uno; lo que le sigue es su resultado.
+    static func proseEndings(_ text: String) -> [AdventureGuide.Ending] {
+        var endings: [AdventureGuide.Ending] = []
+        for sentence in Prose.sentences(plain(text)) {
+            let folded = Prose.fold(sentence)
+            if folded.hasPrefix("si ") || folded.hasPrefix("cuando ") || folded.hasPrefix("en caso ") || endings.isEmpty {
+                let parts = sentence.split(separator: ",", maxSplits: 1).map { String($0).trimmed }
+                endings.append(AdventureGuide.Ending(
+                    title: parts[0].truncated(words: 8).trimmingCharacters(in: CharacterSet(charactersIn: ".")),
+                    condition: parts.count == 2 ? parts[0] : "",
+                    outcome: parts.count == 2 ? parts[1].capitalizedFirst : sentence
+                ))
+            } else {
+                endings[endings.count - 1].outcome = Prose.join(endings[endings.count - 1].outcome, sentence)
+            }
+        }
+        return Array(endings.prefix(5))
     }
 
     // MARK: Consejos genéricos de dirección

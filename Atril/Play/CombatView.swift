@@ -141,14 +141,14 @@ struct CombatView: View {
             let suggested = suggestedEnemies
             if !suggested.isEmpty {
                 Text("Del guion").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                ForEach(suggested, id: \.name) { npc in
-                    let stats = StatBlock(parsing: npc.stats)
+                ForEach(suggested) { enemy in
+                    let stats = enemy.stats
                     Button {
-                        withAnimation(.snappy) { controller.addEnemies(name: npc.name, count: 1, stats: stats) }
+                        withAnimation(.snappy) { controller.addEnemies(name: enemy.name, count: 1, stats: stats) }
                     } label: {
                         HStack {
                             Image(systemName: "flame")
-                            Text(npc.name).lineLimit(1)
+                            Text(enemy.name).lineLimit(1)
                             Spacer()
                             Text([stats.hp.map { "PV \($0)" }, stats.dexterity.map { "DES \($0)" }].compactMap { $0 }.joined(separator: " · "))
                                 .font(.caption.monospacedDigit())
@@ -186,15 +186,16 @@ struct CombatView: View {
         .card()
     }
 
-    /// PNJ con estadísticas: primero los de la escena actual.
-    private var suggestedEnemies: [AdventureGuide.NPC] {
-        guard let guide = controller.guide else { return [] }
-        let here = Set(controller.currentScene?.npcIDs ?? [])
-        return guide.npcs
-            .filter { StatBlock(parsing: $0.stats).hp != nil }
-            .sorted { here.contains($0.id) && !here.contains($1.id) }
-            .prefix(4)
-            .map { $0 }
+    /// Enemigos con estadísticas en el guion y PNJ de la guía que las tengan.
+    private var suggestedEnemies: [EnemyCandidate] {
+        var result = controller.enemyCandidates
+        for npc in controller.guide?.npcs ?? [] {
+            let stats = StatBlock(parsing: npc.stats)
+            if stats.hp != nil, !result.contains(where: { Prose.sameName($0.name, npc.name) }) {
+                result.append(EnemyCandidate(name: npc.name, stats: stats))
+            }
+        }
+        return Array(result.prefix(8))
     }
 }
 

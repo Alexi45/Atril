@@ -201,9 +201,52 @@ private struct MessageView: View {
                     .textSelection(.enabled)
             }
         case .assistant:
-            MarkdownText(text: message.display)
-                .font(.callout)
-                .card(padding: 12)
+            VStack(alignment: .leading, spacing: 8) {
+                MarkdownText(text: message.display)
+                    .font(.callout)
+                if let sources = message.sources, !sources.isEmpty {
+                    SourcesView(sources: sources, tint: tint)
+                }
+            }
+            .card(padding: 12)
+        }
+    }
+}
+
+/// Los pasajes del guion que recibió el tutor: el modelo pequeño a veces inventa, y así se
+/// puede comprobar de un vistazo qué dice realmente el guion.
+private struct SourcesView: View {
+    let sources: [TutorSource]
+    let tint: Color
+    @State private var expanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(.snappy) { expanded.toggle() }
+            } label: {
+                Label(expanded ? "Ocultar lo que dice el guion" : "Comprobar en el guion (\(sources.count))",
+                      systemImage: expanded ? "chevron.up" : "text.magnifyingglass")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(tint)
+            }
+            .buttonStyle(.plain)
+            if expanded {
+                ForEach(sources, id: \.self) { source in
+                    VStack(alignment: .leading, spacing: 2) {
+                        if !source.heading.isEmpty {
+                            Text(source.heading).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                        }
+                        Text(source.text)
+                            .font(.system(.caption, design: .serif))
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                }
+            }
         }
     }
 }

@@ -44,7 +44,27 @@ enum ScriptChunker {
         return 2
     }
 
+    /// Línea corta y suelta entre dos líneas en blanco, sin puntuación final: en un texto sin
+    /// marcas suele ser un título («La casa del farero»).
+    static func isStandaloneHeading(previous: String?, line: String, next: String?) -> Bool {
+        let text = line.trimmed
+        guard (previous?.trimmed.isEmpty ?? true), (next?.trimmed.isEmpty ?? true) else { return false }
+        guard !text.isEmpty, text.count <= 70, text.split(separator: " ").count <= 8,
+              text.first?.isUppercase == true, let last = text.last,
+              !".,;:!?…»)\"".contains(last) else { return false }
+        return true
+    }
+
+    /// Secciones del guion. Si con los títulos claros apenas hay secciones, prueba también
+    /// con las líneas sueltas.
     static func sections(_ script: String) -> [Section] {
+        let strict = sections(script, relaxed: false)
+        if strict.count >= 3 { return strict }
+        let relaxed = sections(script, relaxed: true)
+        return relaxed.count > strict.count ? relaxed : strict
+    }
+
+    private static func sections(_ script: String, relaxed: Bool) -> [Section] {
         var sections: [Section] = []
         var heading = ""
         var part = ""
@@ -60,8 +80,13 @@ enum ScriptChunker {
             body = []
         }
 
-        for line in script.components(separatedBy: "\n") {
-            if isHeading(line) {
+        let lines = script.components(separatedBy: "\n")
+        for (index, line) in lines.enumerated() {
+            let standalone = relaxed && isStandaloneHeading(
+                previous: index > 0 ? lines[index - 1] : nil, line: line,
+                next: index + 1 < lines.count ? lines[index + 1] : nil
+            )
+            if isHeading(line) || standalone {
                 flush()
                 let title = headingText(line)
                 // El primer «# Título» suele ser el nombre de la aventura, no una parte.

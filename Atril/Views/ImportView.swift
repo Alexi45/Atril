@@ -73,7 +73,7 @@ struct ImportView: View {
                     let backend = AIBackend.current
                     Label(backend == .basic
                           ? "Al crearla, Atril organiza el guion en escenas, PNJ y pistas al momento, sin conexión."
-                          : "Al crearla tendrás una guía al momento, y la \(backend.label) la irá mejorando mientras lee el guion entero.",
+                          : "Al crearla tendrás una guía al momento, y \(backend.inSentence) la irá mejorando mientras lee el guion entero.",
                           systemImage: backend.symbol)
                         .font(.callout)
                         .foregroundStyle(.secondary)

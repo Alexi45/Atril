@@ -16,6 +16,11 @@ final class Adventure {
     var analyzedScriptHash: String?
     /// Motor que preparó la guía: «basic», «onDevice», «cloud» o «claude».
     var guideEngine: String?
+    /// Cuándo se editó la guía a mano: la IA no la sustituye sin preguntar.
+    var guideEditedAt: Date?
+    /// Guía que terminó la IA mientras el máster la estaba editando, a la espera de que decida.
+    var pendingGuideData: Data?
+    var pendingGuideEngine: String?
     /// Elementos de la lista «Antes de jugar» ya hechos.
     var prepDone: [String] = []
     /// Duración prevista de cada sesión, para el plan y los avisos de ritmo.
@@ -66,6 +71,11 @@ final class Adventure {
     /// Retrato de un PNJ, buscado por nombre (con o sin tratamiento).
     func portrait(for name: String) -> Data? {
         portraits.first { Prose.sameName($0.npcName, name) }?.imageData
+    }
+
+    /// Al cambiar el nombre de un PNJ, su retrato le sigue.
+    func renamePortrait(from old: String, to new: String) {
+        portraits.first { Prose.sameName($0.npcName, old) }?.npcName = new
     }
 
     func setPortrait(_ data: Data?, for name: String) {

@@ -140,6 +140,8 @@ struct RootView: View {
     private func seedForScreenshotsIfNeeded() {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
+        // Capturas: `-openImport` abre la pantalla de importar.
+        if arguments.contains("-openImport") { showImport = true }
         if arguments.contains("-seedImport") {
             // Simula importar el guion de ejemplo: guía básica al momento y después la IA.
             let adventure = Adventure(title: "Punta Negra (importada)", system: .cthulhu, script: SampleAdventure.script)
@@ -162,14 +164,18 @@ struct RootView: View {
 private struct AdventureRow: View {
     let adventure: Adventure
     @Environment(AnalysisCenter.self) private var analysis
+    @Environment(\.backgroundProminence) private var prominence
+
+    /// Sobre el color de la fila seleccionada, el del sistema de juego no se distingue.
+    private var iconTint: Color { prominence == .increased ? .white : adventure.system.accent }
 
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: adventure.system.symbol)
                 .font(.body.weight(.semibold))
-                .foregroundStyle(adventure.system.accent)
+                .foregroundStyle(iconTint)
                 .frame(width: 34, height: 34)
-                .background(adventure.system.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(iconTint.opacity(prominence == .increased ? 0.22 : 0.12), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             VStack(alignment: .leading, spacing: 2) {
                 Text(adventure.title).font(.body.weight(.medium)).lineLimit(2)
                 Text(subtitle).font(.caption).foregroundStyle(.secondary).lineLimit(1)

@@ -37,7 +37,9 @@ enum ScriptImporter {
             if words < document.pageCount * 30 {
                 text = try await recognize(document, progress: progress)
             } else {
-                text = layer
+                // La maquetación dice qué es título y qué es texto para leer.
+                let structured = PDFStructure.text(of: document)
+                text = structured.isEmpty ? layer : structured
             }
         case .some(let type) where type.conforms(to: .rtf):
             let data = try Data(contentsOf: url)
@@ -55,15 +57,24 @@ enum ScriptImporter {
 
     /// Reconocimiento de texto (OCR) página a página, en español e inglés.
     static func recognize(_ document: PDFDocument, progress: @escaping @MainActor (String) -> Void) async throws -> String {
-        var pages: [String] = []
+        var lines: [PDFStructure.Line] = []
         for index in 0..<document.pageCount {
             try Task.checkCancellation()
             await progress("Leyendo página \(index + 1) de \(document.pageCount) (texto escaneado)")
             guard let page = document.page(at: index), let image = render(page) else { continue }
-            let text = try await Task.detached(priority: .userInitiated) { try recognizeText(in: image) }.value
-            pages.append(text)
+            let height = page.bounds(for: .mediaBox).height
+            let found = try await Task.detached(priority: .userInitiated) { try recognizeLines(in: image) }.value
+            for (position, line) in found.enumerated() {
+                lines.append(PDFStructure.Line(
+                    text: line.text,
+                    // La altura de la línea hace de tamaño de letra: distingue los títulos.
+                    size: (line.height * height).rounded(),
+                    page: index,
+                    isEdge: position < 2 || position >= found.count - 2
+                ))
+            }
         }
-        return pages.joined(separator: "\n\n")
+        return PDFStructure.markdown(lines, pageCount: document.pageCount, headingRatio: 1.3)
     }
 
     /// Dibuja la página a unos 200 ppp, suficiente para el reconocimiento de texto.
@@ -82,13 +93,16 @@ enum ScriptImporter {
         return context.makeImage()
     }
 
-    static func recognizeText(in image: CGImage) throws -> String {
+    /// Líneas reconocidas con su altura relativa a la página.
+    static func recognizeLines(in image: CGImage) throws -> [(text: String, height: CGFloat)] {
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
         request.recognitionLanguages = ["es-ES", "en-US"]
         request.usesLanguageCorrection = true
         try VNImageRequestHandler(cgImage: image).perform([request])
-        return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+        return (request.results ?? []).compactMap { observation in
+            observation.topCandidates(1).first.map { ($0.string, observation.boundingBox.height) }
+        }
     }
 
     /// Normaliza saltos de línea y espacios típicos de los PDF maquetados.

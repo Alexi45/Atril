@@ -24,6 +24,8 @@ final class PlayController {
     }
     private(set) var combat: Combat { didSet { session.combatData = (try? JSONEncoder().encode(combat)) ?? Data() } }
     private(set) var messages: [TutorMessage]
+    /// Enemigos con estadísticas que aparecen en el guion, para añadirlos al combate.
+    private(set) var enemyCandidates: [EnemyCandidate]
 
     // Tutor
     var draft = ""
@@ -57,6 +59,7 @@ final class PlayController {
         self.players = session.players
         self.combat = (try? JSONDecoder().decode(Combat.self, from: session.combatData)) ?? Combat()
         self.messages = session.chat
+        self.enemyCandidates = StatBlock.candidates(in: session.adventure?.script ?? "")
         self.storedElapsed = session.elapsed
         self.sceneEnteredAt = session.elapsed
         self.backend = .current
@@ -220,9 +223,11 @@ final class PlayController {
     /// Añade `count` enemigos iguales («Profundo 1», «Profundo 2»…) con sus estadísticas.
     func addEnemies(name: String, count: Int, stats: StatBlock, dice: Dice = Dice()) {
         let base = name.trimmed.isEmpty ? "Enemigo" : name.trimmed
+        // Sin repetir nombres: el segundo «Profundo» que se añade es «Profundo 2».
+        let existing = combat.combatants.filter { $0.name == base || $0.name.hasPrefix("\(base) ") }.count
         let new = (1...max(count, 1)).map { index in
             Combatant(
-                name: count > 1 ? "\(base) \(index)" : base,
+                name: count > 1 || existing > 0 ? "\(base) \(existing + index)" : base,
                 initiative: stats.initiative(system: system, roll: dice.roll),
                 hp: stats.hp, hpMax: stats.hp
             )
@@ -334,8 +339,8 @@ final class PlayController {
         tutorTask?.cancel()
     }
 
-    private func finish(with answer: String) {
-        messages.append(TutorMessage(role: .assistant, display: answer, content: .string(answer)))
+    private func finish(with answer: String, sources: [TutorSource]? = nil) {
+        messages.append(TutorMessage(role: .assistant, display: answer, content: .string(answer), sources: sources))
         session.chat = messages
         touch()
         streamingText = ""
@@ -370,7 +375,8 @@ final class PlayController {
                     answer = text
                     streamingText = text
                 }
-                return finish(with: answer)
+                let used = TutorContext.passages(question: question, table: table, limit: passages)
+                return finish(with: answer, sources: used.map { TutorSource(heading: $0.heading, text: $0.text) })
             } catch is CancellationError {
                 return fail(CancellationError(), question: question)
             } catch {

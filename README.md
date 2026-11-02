@@ -15,6 +15,10 @@ Tutor de máster para iPad y Mac. Le das el guion de una aventura de **La llamad
 11. **Búsqueda** (⌘F): escenas, PNJ, pistas y texto del guion a la vez, sin tildes ni mayúsculas.
 12. **Hoja de preparación en PDF**: A4 maquetado sin partir escenas, para la próxima sesión (desde donde se quedó la mesa), una sesión del plan o la aventura entera, con el «Previamente…», cada escena resumida y la referencia de PNJ con retratos. Se comparte o se imprime.
 13. **Exportar e importar** (`.atril`): guion, guía, sesiones y retratos en un archivo JSON para pasar del Mac al iPad por AirDrop o Archivos, o como copia de seguridad.
+14. **Tablas de mesa**: ataque de locura, fobia, manía, detalle inquietante, rumor, botín, encuentro, complicación, giro de la trama, nombres… con una pulsación y sin conexión, para anotar o narrar el resultado.
+15. **Todo se puede corregir**: escenas, pistas y PNJ se editan a mano. Si editas la guía mientras la IA la prepara, al terminar te pregunta con cuál te quedas en vez de pisar tus cambios.
+
+En mesa la pantalla no se apaga, y cada respuesta del tutor lleva «Comprobar en el guion» con los pasajes en los que se ha basado.
 
 **Sin cuentas ni pagos**: la IA va integrada. Incluye una aventura corta original de ejemplo, *La luz de Punta Negra*.
 
@@ -33,7 +37,18 @@ Al importar, la guía básica aparece al instante y la IA la sustituye cuando te
 
 Medido en un Mac con macOS 27 y la aventura de ejemplo (1.110 palabras): la IA del dispositivo prepara la guía en ~80 s y el tutor responde en 4-7 s. El trasfondo, el gancho y los desenlaces se toman del texto del guion cuando existen (el modelo pequeño los parafrasea peor). Salvaguardas frente a sus fallos habituales: tope de tokens por respuesta (evita bucles), filtro de valores de relleno y fragmentos del esquema (`Prose.isPlaceholder`), consejos repetidos o de dos palabras descartados, y PNJ de cada escena decididos por el texto. Las pistas clave que elige la IA aciertan a medias: se corrigen en el editor de escenas.
 
-Los PDF escaneados se leen con OCR (Vision) en el propio dispositivo.
+### Lectura de PDF maquetados
+
+Un módulo publicado no tiene encabezados: tiene líneas sueltas con otra fuente. `PDFStructure` lee la fuente de cada línea y recupera la estructura:
+
+- **Títulos** por tamaño: el mayor es el título del documento; los tamaños raros con muchos por debajo son partes; el siguiente, escenas; lo más pequeño, apartados que no parten la escena. Sin tamaños distintos, las líneas cortas en negrita hacen de título. Un título en dos líneas se une.
+- **Texto para leer** por la cursiva, además de frases como «léeles lo siguiente:» o «lee o parafrasea».
+- **Cabeceras y números de página**: lo que se repite en los bordes de muchas páginas se elimina.
+- **Párrafos** recompuestos a partir de las líneas partidas y los guiones de final de línea.
+
+Los PDF escaneados se leen con OCR (Vision) en el propio dispositivo, y la altura de cada línea sustituye al tamaño de letra. En archivos de texto sin marcas, las líneas cortas sueltas entre líneas en blanco cuentan como títulos si no hay otros.
+
+Las estadísticas del guion («Profundo: FUE 70, … PV 13», o los bloques de D&D con «Clase de Armadura» y «Puntos de golpe») se detectan para añadir enemigos al combate de un toque.
 
 ## Requisitos
 
@@ -55,9 +70,9 @@ Los PDF escaneados se leen con OCR (Vision) en el propio dispositivo.
 
 ## Depuración y capturas (DEBUG)
 
-- `-seedDemo` crea la aventura de ejemplo con una sesión a medias; `-openPlay` abre la mesa; `-openPanel dice|party|combat|combatstrip|map|end|handout|document|ambience|search` (en la mesa) o `prep` (en la guía); `-openTab plan|map|scenes|npcs…`; `-ask "pregunta"`.
-- `-seedImport` importa el guion de ejemplo como un archivo nuevo (guía básica + IA).
-- `-probeAI` analiza el ejemplo con cada modelo de Apple disponible, pregunta al tutor e imprime tiempos y resultados (`PROBE_TIERS=onDevice` para elegir).
+- `-seedDemo` crea la aventura de ejemplo con una sesión a medias; `-openPlay` abre la mesa; `-openPanel dice|tables|party|combat|combatstrip|map|end|handout|document|ambience|search` (en la mesa) o `prep` (en la guía); `-openTab plan|map|scenes|npcs…`; `-ask "pregunta"`.
+- `-seedImport` importa el guion de ejemplo como un archivo nuevo (guía básica + IA); `-openImport` abre la pantalla de importar.
+- `-probeAI` analiza el ejemplo con cada modelo de Apple disponible, pregunta al tutor e imprime tiempos y resultados (`PROBE_TIERS=onDevice` para elegir; `PROBE_PDF=ruta` para probar un PDF dentro del contenedor de la app y `PROBE_QUESTION` para cambiar la pregunta).
 - `-hasAPIKey YES` simula tener clave de Claude.
 
 ```bash

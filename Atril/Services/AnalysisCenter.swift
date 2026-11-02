@@ -45,9 +45,12 @@ final class AnalysisCenter {
             return
         }
         jobs[id] = Job(backend: backend)
+        // Un análisis largo no debe interrumpirse porque se apague la pantalla.
+        KeepAwake.acquire()
         let title = adventure.title
         let script = adventure.script
         let system = adventure.system
+        let startedAt = Date()
 
         tasks[id] = Task { [weak self] in
             do {
@@ -57,9 +60,9 @@ final class AnalysisCenter {
                         self?.jobs[id]?.scenesFound = count
                         self?.jobs[id]?.phase = count == 0 ? "Claude está leyendo el guion…" : "\(count) escenas preparadas"
                     }
-                    self?.apply(guide, engine: "claude", to: adventure)
+                    self?.finish(guide, engine: "claude", adventure: adventure, startedAt: startedAt)
                 case .apple(let tier):
-                    try await self?.runApple(adventure, title: title, script: script, system: system, tier: tier)
+                    try await self?.runApple(adventure, title: title, script: script, system: system, tier: tier, startedAt: startedAt)
                 case .basic:
                     break
                 }
@@ -69,10 +72,11 @@ final class AnalysisCenter {
             }
             self?.jobs[id] = nil
             self?.tasks[id] = nil
+            KeepAwake.release()
         }
     }
 
-    private func runApple(_ adventure: Adventure, title: String, script: String, system: GameSystem, tier: AppleAI.Tier) async throws {
+    private func runApple(_ adventure: Adventure, title: String, script: String, system: GameSystem, tier: AppleAI.Tier, startedAt: Date) async throws {
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, macOS 26.0, *) else { throw AppleAI.Failure.unavailable }
         let id = adventure.id
@@ -95,14 +99,14 @@ final class AnalysisCenter {
                 hybrid.endings = guide.endings.isEmpty ? basic.endings : guide.endings
                 guide = hybrid
             }
-            apply(guide, engine: tier.rawValue, to: adventure)
+            finish(guide, engine: tier.rawValue, adventure: adventure, startedAt: startedAt)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
             // La nube privada no siempre responde: se repite en el dispositivo.
             guard tier == .cloud, AppleAI.status.tiers.contains(.onDevice) else { throw error }
             jobs[id]?.backend = .apple(.onDevice)
-            try await runApple(adventure, title: title, script: script, system: system, tier: .onDevice)
+            try await runApple(adventure, title: title, script: script, system: system, tier: .onDevice, startedAt: startedAt)
         }
         #else
         throw AppleAI.Failure.unavailable
@@ -113,11 +117,36 @@ final class AnalysisCenter {
         tasks[adventure.id]?.cancel()
     }
 
+    /// Si el máster editó la guía mientras la IA trabajaba, no se la pisa: queda pendiente
+    /// de que decida con cuál se queda.
+    private func finish(_ guide: AdventureGuide, engine: String, adventure: Adventure, startedAt: Date) {
+        if let edited = adventure.guideEditedAt, edited > startedAt {
+            adventure.pendingGuideData = try? JSONEncoder().encode(guide)
+            adventure.pendingGuideEngine = engine
+        } else {
+            apply(guide, engine: engine, to: adventure)
+        }
+    }
+
+    /// El máster prefiere la guía que terminó la IA.
+    func acceptPendingGuide(of adventure: Adventure) {
+        if let data = adventure.pendingGuideData, let guide = try? JSONDecoder().decode(AdventureGuide.self, from: data) {
+            apply(guide, engine: adventure.pendingGuideEngine ?? "onDevice", to: adventure)
+        }
+        discardPendingGuide(of: adventure)
+    }
+
+    func discardPendingGuide(of adventure: Adventure) {
+        adventure.pendingGuideData = nil
+        adventure.pendingGuideEngine = nil
+    }
+
     /// Sustituye la guía y recoloca las sesiones en las escenas equivalentes de la nueva.
     private func apply(_ guide: AdventureGuide, engine: String, to adventure: Adventure) {
         let old = adventure.guide
         adventure.guide = guide
         adventure.guideEngine = engine
+        adventure.guideEditedAt = nil
         func remap(_ id: String?) -> String? {
             guard let id, let title = old?.scene(id)?.title else { return nil }
             return guide.scenes.first { Prose.matches($0.title, title) }?.id

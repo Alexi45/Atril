@@ -82,6 +82,8 @@ enum AppleAI {
         case contextTooLarge
         case guardrail
         case quota
+        /// Ocupado o con la app en segundo plano: se pasa en un rato.
+        case busy
         case other(String)
 
         var errorDescription: String? {
@@ -90,6 +92,7 @@ enum AppleAI {
             case .contextTooLarge: "El texto es demasiado largo para la IA del dispositivo."
             case .guardrail: "La IA de Apple ha preferido no responder a este contenido."
             case .quota: "Se ha agotado la cuota de la nube privada de Apple por hoy. Se usará la IA del dispositivo."
+            case .busy: "La IA de Apple está ocupada ahora mismo. Vuelve a intentarlo en un momento."
             case .other(let message): message
             }
         }
@@ -104,6 +107,8 @@ enum AppleAI {
                 || lowered.contains("context window") { return .contextTooLarge }
             if lowered.contains("guardrail") || lowered.contains("refusal") || lowered.contains("unsafe") { return .guardrail }
             if lowered.contains("quota") { return .quota }
+            if lowered.contains("ratelimit") || lowered.contains("rate limit") || lowered.contains("concurrent")
+                || lowered.contains("background") { return .busy }
             if lowered.contains("assetsunavailable") || lowered.contains("unavailable") { return .unavailable }
             return .other(error.localizedDescription)
         }
@@ -395,9 +400,11 @@ enum AppleAnalyzer {
             do {
                 let session = AppleSessions.make(tier, instructions: enrichmentInstructions(system))
                 // Tope de respuesta: si el modelo entra en bucle, falla en segundos y no en minutos.
-                let value = try await session.respond(to: prompt, generating: SceneEnrichment.self,
-                                                      options: GenerationOptions(temperature: 0.2, maximumResponseTokens: 900)).content
-                apply(value, to: &scene)
+                let value = try await retryingWhenBusy {
+                    try await session.respond(to: prompt, generating: SceneEnrichment.self,
+                                              options: GenerationOptions(temperature: 0.2, maximumResponseTokens: 900)).content
+                }
+                apply(value, to: &scene, characters: basic.characters)
                 scenes[index].scenes = [scene]
                 scenes[index].summary = scene.summary
             } catch is CancellationError {
@@ -482,9 +489,26 @@ enum AppleAnalyzer {
         return GuideMerger.merge(chunks: drafts, overview: overview, links: links, system: system)
     }
 
+    /// Si el modelo está ocupado o la app pasó un momento a segundo plano, espera y repite:
+    /// en un guion largo no merece perder la escena por eso.
+    private static func retryingWhenBusy<T>(_ work: () async throws -> T) async throws -> T {
+        var attempt = 0
+        while true {
+            do {
+                return try await work()
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch {
+                guard case .busy = AppleAI.Failure.classify(error), attempt < 4 else { throw error }
+                attempt += 1
+                try await Task.sleep(for: .seconds(attempt * 5))
+            }
+        }
+    }
+
     /// Mezcla la ficha de la IA con la escena básica. Los PNJ presentes los decide el texto
     /// (el modelo tiende a repetir la lista completa) y la marca de «clave» la visión de conjunto.
-    static func apply(_ value: SceneEnrichment, to scene: inout DraftScene) {
+    static func apply(_ value: SceneEnrichment, to scene: inout DraftScene, characters: [DraftCharacter] = []) {
         if !Prose.useful(value.summary).isEmpty { scene.summary = value.summary }
         // Un lugar que repite el título de la escena no aporta nada.
         if !Prose.useful(value.place).isEmpty, !Prose.matches(value.place, scene.title),
@@ -493,7 +517,11 @@ enum AppleAnalyzer {
         if !goals.isEmpty { scene.goals = goals }
         let clues = value.clues
             .map { SceneClueDraft(title: Prose.cleanLabel($0.title), detail: $0.detail.trimmed) }
-            .filter { !Prose.isSchemaJunk($0.title) && $0.title.count > 3 && $0.detail.split(separator: " ").count >= 4 }
+            .filter { clue in
+                // Un personaje no es una pista: el modelo a veces los mezcla.
+                !Prose.isSchemaJunk(clue.title) && clue.title.count > 3 && clue.detail.split(separator: " ").count >= 4
+                    && !characters.contains { Prose.sameName($0.name, clue.title) }
+            }
             .map { DraftClue(title: $0.title, detail: $0.detail) }
         let explicit = scene.clues.filter(\.isCore)
         if !clues.isEmpty { scene.clues = explicit + clues.filter { clue in !explicit.contains { Prose.matches($0.title, clue.title) } } }
@@ -522,8 +550,10 @@ enum AppleAnalyzer {
         """
         do {
             let session = AppleSessions.make(tier, instructions: instructions(system))
-            return try await session.respond(to: prompt, generating: CastExtraction.self,
-                                             options: GenerationOptions(temperature: 0.3, maximumResponseTokens: 220 * batch.count + 200)).content.characters
+            return try await retryingWhenBusy {
+                try await session.respond(to: prompt, generating: CastExtraction.self,
+                                          options: GenerationOptions(temperature: 0.3, maximumResponseTokens: 220 * batch.count + 200)).content.characters
+            }
         } catch is CancellationError {
             throw CancellationError()
         } catch {

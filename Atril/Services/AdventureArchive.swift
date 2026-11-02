@@ -21,6 +21,7 @@ struct AdventureArchive: Codable {
     var sourceFileName: String?
     var guide: AdventureGuide?
     var guideEngine: String?
+    var guideEditedAt: Date?
     var prepDone: [String]
     var sessionHours: Double
     var sessions: [Session]
@@ -61,6 +62,7 @@ struct AdventureArchive: Codable {
         sourceFileName = adventure.sourceFileName
         guide = adventure.guide
         guideEngine = adventure.guideEngine
+        guideEditedAt = adventure.guideEditedAt
         prepDone = adventure.prepDone
         sessionHours = adventure.sessionHours
         sessions = adventure.sessions.sorted { $0.number < $1.number }.map { session in
@@ -106,6 +108,7 @@ struct AdventureArchive: Codable {
         context.insert(adventure)
         adventure.guide = guide
         adventure.guideEngine = guideEngine
+        adventure.guideEditedAt = guideEditedAt
         adventure.prepDone = prepDone
         adventure.sessionHours = sessionHours
         for item in sessions {

@@ -25,6 +25,45 @@ extension AdventureGuide {
         for index in clues.indices where clues[index].sceneID == id { clues[index].sceneID = "" }
     }
 
+    /// Sustituye las pistas de una escena por las editadas.
+    mutating func setClues(_ edited: [Clue], forScene id: String) {
+        guard let index = scenes.firstIndex(where: { $0.id == id }) else { return }
+        let previous = Set(clues(in: scenes[index]).map(\.id))
+        let kept = Set(edited.map(\.id))
+        clues.removeAll { previous.contains($0.id) && !kept.contains($0.id) }
+        for clue in edited {
+            if let position = clues.firstIndex(where: { $0.id == clue.id }) {
+                clues[position] = clue
+            } else {
+                clues.append(clue)
+            }
+        }
+        scenes[index].clueIDs = edited.map(\.id)
+    }
+
+    func nextClueID(excluding others: [Clue] = []) -> String {
+        let numbers = (clues + others).compactMap { Int($0.id.dropFirst()) }
+        return "p\((numbers.max() ?? 0) + 1)"
+    }
+
+    func blankNPC() -> NPC {
+        let next = (npcs.compactMap { Int($0.id.dropFirst()) }.max() ?? 0) + 1
+        return NPC(id: "n\(next)", name: "", role: "", look: "", motivation: "", secret: "", voice: "", stats: "")
+    }
+
+    mutating func upsert(_ npc: NPC) {
+        if let index = npcs.firstIndex(where: { $0.id == npc.id }) {
+            npcs[index] = npc
+        } else {
+            npcs.append(npc)
+        }
+    }
+
+    mutating func removeNPC(_ id: String) {
+        npcs.removeAll { $0.id == id }
+        for index in scenes.indices { scenes[index].npcIDs.removeAll { $0 == id } }
+    }
+
     mutating func moveScene(_ id: String, by offset: Int) {
         guard let index = scenes.firstIndex(where: { $0.id == id }) else { return }
         let target = index + offset
@@ -41,16 +80,17 @@ extension Adventure {
         change(&value)
         guide = value
         guideEngine = engine
+        guideEditedAt = .now
     }
 }
 
 struct SceneEditor: View {
-    enum Result { case save(AdventureGuide.Scene, coreClueIDs: Set<String>), delete }
+    enum Result { case save(AdventureGuide.Scene, clues: [AdventureGuide.Clue]), delete }
 
     @State private var scene: AdventureGuide.Scene
     @State private var goals: String
     @State private var tips: String
-    @State private var coreClueIDs: Set<String>
+    @State private var clues: [AdventureGuide.Clue]
     @State private var confirmDelete = false
     let guide: AdventureGuide?
     let isNew: Bool
@@ -61,7 +101,7 @@ struct SceneEditor: View {
         _scene = State(initialValue: scene)
         _goals = State(initialValue: scene.goals.joined(separator: "\n"))
         _tips = State(initialValue: scene.tips.joined(separator: "\n"))
-        _coreClueIDs = State(initialValue: Set((guide.map { $0.clues(in: scene) } ?? []).filter(\.isCore).map(\.id)))
+        _clues = State(initialValue: guide.map { $0.clues(in: scene) } ?? [])
         self.guide = guide
         self.isNew = isNew
         self.onFinish = onFinish
@@ -97,24 +137,32 @@ struct SceneEditor: View {
                 Section("Peligro") {
                     editor($scene.danger, placeholder: "Combates, pérdidas de Cordura o PV")
                 }
-                if let guide, !guide.clues(in: scene).isEmpty {
-                    Section {
-                        ForEach(guide.clues(in: scene)) { clue in
-                            Toggle(isOn: Binding(
-                                get: { coreClueIDs.contains(clue.id) },
-                                set: { on in if on { coreClueIDs.insert(clue.id) } else { coreClueIDs.remove(clue.id) } }
-                            )) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(clue.title)
-                                    Text(clue.detail).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                Section {
+                    ForEach($clues) { $clue in
+                        VStack(alignment: .leading, spacing: 8) {
+                            TextField("Nombre de la pista", text: $clue.title).font(.body.weight(.medium))
+                            TextField("Qué revela", text: $clue.detail, axis: .vertical).font(.callout).lineLimit(1...5)
+                            HStack {
+                                Toggle("Clave", isOn: $clue.isCore).fixedSize()
+                                Spacer()
+                                Button("Quitar", role: .destructive) {
+                                    let id = clue.id
+                                    clues.removeAll { $0.id == id }
                                 }
+                                .buttonStyle(.borderless)
                             }
+                            .font(.callout)
                         }
-                    } header: {
-                        Text("Pistas · marca las clave")
-                    } footer: {
-                        Text("Las pistas clave son las imprescindibles para terminar la aventura: el tutor te avisa si se quedan atrás.")
+                        .padding(.vertical, 2)
                     }
+                    Button("Añadir pista", systemImage: "plus") {
+                        let id = guide?.nextClueID(excluding: clues) ?? "p\(clues.count + 1)"
+                        clues.append(AdventureGuide.Clue(id: id, title: "", detail: "", sceneID: scene.id, leadsTo: "", isCore: false))
+                    }
+                } header: {
+                    Text("Pistas")
+                } footer: {
+                    Text("Las clave son las imprescindibles para terminar la aventura: el tutor te avisa si se quedan atrás.")
                 }
                 if let guide, !guide.npcs.isEmpty {
                     Section("PNJ en escena") {
@@ -145,7 +193,7 @@ struct SceneEditor: View {
                     Button("Guardar") {
                         scene.goals = goals.components(separatedBy: "\n").cleaned
                         scene.tips = tips.components(separatedBy: "\n").cleaned
-                        onFinish(.save(scene, coreClueIDs: coreClueIDs))
+                        onFinish(.save(scene, clues: clues.filter { !$0.title.trimmed.isEmpty }))
                         dismiss()
                     }
                     .disabled(scene.title.trimmed.isEmpty)
@@ -249,5 +297,79 @@ struct PlanView: View {
                 .card()
             }
         }
+    }
+}
+
+/// Corregir o crear un PNJ: la IA acierta mucho, pero no siempre.
+struct NPCEditor: View {
+    enum Result { case save(AdventureGuide.NPC), delete }
+
+    @State private var npc: AdventureGuide.NPC
+    @State private var confirmDelete = false
+    let isNew: Bool
+    let onFinish: (Result) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    init(npc: AdventureGuide.NPC, isNew: Bool, onFinish: @escaping (Result) -> Void) {
+        _npc = State(initialValue: npc)
+        self.isNew = isNew
+        self.onFinish = onFinish
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Personaje") {
+                    TextField("Nombre", text: $npc.name)
+                    TextField("Papel en la historia", text: $npc.role, axis: .vertical).lineLimit(1...3)
+                }
+                Section("Para interpretarlo") {
+                    TextField("Aspecto", text: $npc.look, axis: .vertical).lineLimit(1...4)
+                    TextField("Qué quiere", text: $npc.motivation, axis: .vertical).lineLimit(1...4)
+                    TextField("Voz, gestos, forma de hablar", text: $npc.voice, axis: .vertical).lineLimit(1...4)
+                }
+                Section {
+                    TextField("Qué oculta", text: $npc.secret, axis: .vertical).lineLimit(1...4)
+                } header: {
+                    Text("Solo para el máster")
+                }
+                Section {
+                    TextField("FUE 50, DES 60, PV 12…", text: $npc.stats, axis: .vertical).lineLimit(1...4)
+                } header: {
+                    Text("Estadísticas")
+                } footer: {
+                    Text("Si incluyes los PV (y la DES o CA), podrás añadirlo al combate de un toque.")
+                }
+                if !isNew {
+                    Section {
+                        Button("Eliminar PNJ", role: .destructive) { confirmDelete = true }
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .navigationTitle(isNew ? "Nuevo PNJ" : "Editar PNJ")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancelar") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Guardar") {
+                        onFinish(.save(npc))
+                        dismiss()
+                    }
+                    .disabled(npc.name.trimmed.isEmpty)
+                }
+            }
+            .confirmationDialog("¿Eliminar a «\(npc.name)»?", isPresented: $confirmDelete, titleVisibility: .visible) {
+                Button("Eliminar PNJ", role: .destructive) {
+                    onFinish(.delete)
+                    dismiss()
+                }
+            }
+        }
+        #if os(macOS)
+        .frame(minWidth: 500, minHeight: 560)
+        #endif
     }
 }

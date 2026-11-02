@@ -15,8 +15,15 @@ enum AIProbe {
         for tier in requested ?? status.tiers {
             let start = Date()
             do {
+                // `PROBE_PDF=ruta` prueba con un PDF real (dentro del contenedor de la app) en vez del ejemplo.
+                var title = SampleAdventure.title
+                var script = SampleAdventure.script
+                if let path = ProcessInfo.processInfo.environment["PROBE_PDF"] {
+                    script = try await ScriptImporter.load(URL(fileURLWithPath: path))
+                    title = URL(fileURLWithPath: path).deletingPathExtension().lastPathComponent
+                }
                 let guide = try await AppleAnalyzer.analyze(
-                    title: SampleAdventure.title, script: SampleAdventure.script, system: .cthulhu, tier: tier
+                    title: title, script: script, system: .cthulhu, tier: tier
                 ) { progress in print("   [\(tier.rawValue)] \(progress.phase)") }
                 print("== \(tier.rawValue): guía en \(Int(Date().timeIntervalSince(start))) s")
                 print("   premisa: \(guide.premise.truncated(words: 40))")
@@ -39,9 +46,10 @@ enum AIProbe {
                         SessionNote(playTime: 2800, text: "No han pasado por la parroquia; van directos al faro."),
                     ]
                 )
-                let table = TableSnapshot(title: SampleAdventure.title, system: .cthulhu, guide: guide, state: state,
-                                          index: ScriptIndex(script: SampleAdventure.script), recent: [])
-                let question = "Están atascados delante de la lente y no saben qué significa el signo. ¿Qué hago?"
+                let table = TableSnapshot(title: title, system: .cthulhu, guide: guide, state: state,
+                                          index: ScriptIndex(script: script), recent: [])
+                let question = ProcessInfo.processInfo.environment["PROBE_QUESTION"]
+                    ?? "Están atascados delante de la lente y no saben qué significa el signo. ¿Qué hago?"
                 let prompt = TutorContext.prompt(question: question, table: table, passages: AppleAI.passageCount(for: tier), generous: tier == .cloud)
                 let askStart = Date()
                 var answer = ""

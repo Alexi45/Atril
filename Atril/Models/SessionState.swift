@@ -22,6 +22,12 @@ struct Player: Codable, Hashable, Identifiable {
     var notes = ""
 }
 
+/// Pasaje del guion en el que se apoyó una respuesta del tutor.
+struct TutorSource: Codable, Hashable {
+    var heading: String
+    var text: String
+}
+
 struct TutorMessage: Codable, Hashable, Identifiable {
     enum Role: String, Codable { case user, assistant }
 
@@ -35,6 +41,8 @@ struct TutorMessage: Codable, Hashable, Identifiable {
     var content: JSONValue
     /// Huella del prompt de sistema con el que se generó la respuesta.
     var contextHash: String?
+    /// Pasajes del guion que recibió el tutor, para poder comprobar lo que dice.
+    var sources: [TutorSource]?
 
     /// Representación en la API: `{role, content}`.
     var apiMessage: JSONValue {

@@ -15,6 +15,17 @@ enum AIBackend: Equatable {
         }
     }
 
+    /// Cómo se le nombra dentro de una frase: «la IA de Apple la irá mejorando».
+    var inSentence: String {
+        switch self {
+        case .apple: "la IA de Apple"
+        case .basic: "el tutor básico"
+        case .claude: "Claude"
+        }
+    }
+
+    var atSentenceStart: String { inSentence.prefix(1).uppercased() + inSentence.dropFirst() }
+
     var symbol: String {
         switch self {
         case .apple(.cloud): "cloud"
@@ -49,6 +60,12 @@ struct TableSnapshot {
 // MARK: - Contexto compacto para la IA de Apple
 
 enum TutorContext {
+    /// Pasajes del guion más relacionados con la pregunta y la escena actual.
+    static func passages(question: String, table: TableSnapshot, limit: Int) -> [ScriptIndex.Passage] {
+        let query = [question, table.scene?.title ?? "", table.scene?.place ?? ""].joined(separator: " ")
+        return table.index.search(query, limit: limit)
+    }
+
     /// Prompt autocontenido para modelos de contexto corto: la escena actual, el estado de la
     /// mesa y los pasajes del guion más relacionados con la pregunta.
     static func prompt(question: String, table: TableSnapshot, passages: Int, generous: Bool) -> String {
@@ -71,8 +88,7 @@ enum TutorContext {
         }
         parts.append(TutorPrompts.stateBlock(table.state, ids: false))
 
-        let query = [question, table.scene?.title ?? "", table.scene?.place ?? ""].joined(separator: " ")
-        let found = table.index.search(query, limit: passages)
+        let found = self.passages(question: question, table: table, limit: passages)
         if !found.isEmpty {
             let wordLimit = generous ? 160 : 90
             parts.append("## Fragmentos del guion relacionados\n" + found.enumerated()

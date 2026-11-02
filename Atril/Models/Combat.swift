@@ -84,7 +84,7 @@ struct Combat: Codable, Hashable {
 }
 
 /// Lee lo útil para el combate de unas estadísticas en texto («PV 13», «DES 50», «CA 15»).
-struct StatBlock: Equatable {
+struct StatBlock: Hashable {
     var hp: Int?
     var dexterity: Int?
     var initiativeBonus: Int?
@@ -105,10 +105,10 @@ struct StatBlock: Equatable {
             let digits = text[range].split(whereSeparator: { !$0.isNumber && $0 != "-" && $0 != "+" }).last.map(String.init)
             return digits.flatMap { Int($0.replacingOccurrences(of: "+", with: "")) }
         }
-        hp = number(#"\b(PV|HP|puntos de (vida|golpe))\s*:?\s*\d+"#)
+        hp = number(#"\b(PV|PG|HP|puntos de (vida|golpe))\s*:?\s*\d+"#)
         dexterity = number(#"\b(DES|DEX|destreza)\s*:?\s*\d+"#)
         initiativeBonus = number(#"\b(iniciativa|init)\s*:?\s*[+-]?\d+"#) ?? number(#"\b(DES|DEX)\s*\d+\s*\(\s*[+-]\d+\s*\)"#)
-        armorClass = number(#"\b(CA|AC)\s*:?\s*\d+"#)
+        armorClass = number(#"\b(CA|AC|clase de armadura)\s*:?\s*\d+"#)
     }
 
     /// Iniciativa de un enemigo: en Cthulhu manda la DES; en D&D, d20 + modificador.
