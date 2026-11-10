@@ -4,9 +4,16 @@ import SwiftUI
 @main
 struct AtrilApp: App {
     @State private var analysis = AnalysisCenter()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         KeychainStore.syncFlag()
+        #if os(iOS)
+        // Las cachés (guías, índices, miniaturas) se rehacen solas: si falta memoria, se sueltan.
+        NotificationCenter.default.addObserver(forName: UIApplication.didReceiveMemoryWarningNotification, object: nil, queue: nil) { _ in
+            CacheRegistry.purgeAll()
+        }
+        #endif
         #if DEBUG
         // Diagnóstico de la IA: no necesita ventana, así funciona lanzado desde un terminal.
         if CommandLine.arguments.contains("-probeAI") {
@@ -22,6 +29,9 @@ struct AtrilApp: App {
         WindowGroup {
             RootView()
                 .environment(analysis)
+                .onChange(of: scenePhase) {
+                    if scenePhase == .active { AppleAI.refreshStatus() }
+                }
         }
         .modelContainer(for: [Adventure.self, PlaySession.self, Portrait.self])
         #if os(macOS)

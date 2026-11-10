@@ -24,7 +24,20 @@ enum HeuristicAnalyzer {
         return GuideMerger.merge(chunks: drafts.allChunks, overview: drafts.overview, system: system)
     }
 
+    private struct DraftsKey: Hashable {
+        var script: String
+        var system: GameSystem
+    }
+
+    /// El mismo guion se analiza al importarlo, al prepararlo la IA y al comprobar lo que hizo:
+    /// los borradores se calculan una vez.
+    private static let cachedDrafts = BoundedCache<DraftsKey, Drafts>(limit: 2)
+
     static func drafts(script: String, system: GameSystem) -> Drafts {
+        cachedDrafts.value(for: DraftsKey(script: script, system: system)) { makeDrafts(script: script, system: system) }
+    }
+
+    private static func makeDrafts(script: String, system: GameSystem) -> Drafts {
         let sections = ScriptChunker.sections(script)
         var chunks: [DraftChunk] = []
         var bodies: [String] = []
@@ -69,13 +82,13 @@ enum HeuristicAnalyzer {
 
         let characters = Self.characters(in: script, appendix: appendix)
         // Asocia a cada escena los personajes que se nombran en ella.
+        let nameWords = characters.map { Prose.words($0.name).filter { $0.count > 3 } }
         for index in chunks.indices {
             guard var scene = chunks[index].scenes.first else { continue }
             let text = Prose.fold(scene.title + " " + scene.readAloud + " " + bodies[index])
-            scene.characterNames = characters.filter { character in
-                let name = Prose.words(character.name).filter { $0.count > 3 }
-                return !name.isEmpty && name.contains { text.contains($0) }
-            }.map(\.name)
+            scene.characterNames = zip(characters, nameWords).filter { _, name in
+                !name.isEmpty && name.contains { text.containsBytes($0) }
+            }.map(\.0.name)
             chunks[index].scenes = [scene]
         }
 
@@ -125,12 +138,13 @@ enum HeuristicAnalyzer {
         var scene = DraftScene(title: cleanTitle(section.heading.isEmpty ? "Escena" : section.heading))
         scene.act = section.part
         scene.readAloud = readAloud.joined(separator: " ")
-        let sentences = Prose.sentences(prose)
-        scene.summary = sentences.prefix(3).joined(separator: " ")
+        // Las frases del cuerpo se trocean y se pliegan una vez para todas las búsquedas.
+        let sentences = Sentences(Prose.sentences(prose))
+        scene.summary = sentences.raw.prefix(3).joined(separator: " ")
         scene.place = place(in: scene.readAloud + " " + prose) ?? ""
-        scene.checks = checks(in: body, system: system)
-        scene.clues = clues(in: body)
-        scene.danger = danger(in: body, system: system)
+        scene.checks = checks(in: sentences, system: system)
+        scene.clues = clues(in: sentences)
+        scene.danger = danger(in: sentences)
         scene.goals = scene.clues.prefix(3).map { "Descubrir: \($0.title.lowercased())" }
         scene.tips = tips(for: scene, system: system)
         scene.ifStuck = ifStuck(for: scene)
@@ -139,12 +153,12 @@ enum HeuristicAnalyzer {
 
     /// Frase que anuncia el texto para leer: «Cuando lleguen, léeles lo siguiente:».
     static func isReadAloudCue(_ text: String) -> Bool {
-        let folded = Prose.fold(text)
         guard text.count < 140 else { return false }
+        let folded = Prose.fold(text)
         let cues = ["lee en voz alta", "leed en voz alta", "leer en voz alta", "para leer", "leeles", "leedles",
                     "lee lo siguiente", "leed lo siguiente", "lee a los jugadores", "leed a los jugadores",
                     "leer a los jugadores", "lee o parafrasea", "leed o parafrasead", "lee este texto"]
-        return cues.contains { folded.contains($0) }
+        return cues.contains { folded.containsBytes($0) }
     }
 
     static func cleanTitle(_ heading: String) -> String {
@@ -162,9 +176,11 @@ enum HeuristicAnalyzer {
             .replacingOccurrences(of: "**", with: "")
     }
 
+    private static let placePattern = try! NSRegularExpression(pattern: #"\b(en|hacia|desde)\s+(el|la|los|las)\s+((?:[\p{Lu}][\p{L}]+\s?){1,3})"#)
+
     static func place(in text: String) -> String? {
-        let pattern = #"\b(en|hacia|desde)\s+(el|la|los|las)\s+((?:[\p{Lu}][\p{L}]+\s?){1,3})"#
-        guard let match = text.range(of: pattern, options: .regularExpression) else { return nil }
+        guard let found = placePattern.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              let match = Range(found.range, in: text) else { return nil }
         let words = text[match].split(separator: " ").dropFirst()
         return words.joined(separator: " ").trimmed.capitalizedFirst
     }
@@ -188,28 +204,72 @@ enum HeuristicAnalyzer {
         "Constitución", "Inteligencia", "Sabiduría", "Carisma",
     ]
 
+    /// Frases de un texto con su versión plegada (sin tildes ni mayúsculas, con las palabras
+    /// separadas por un espacio y espacios a los lados, para buscar palabras completas).
+    struct Sentences {
+        let raw: [String]
+        let padded: [String]
+
+        init(_ raw: [String]) {
+            self.raw = raw
+            padded = raw.map { " \(Prose.fold($0)) " }
+        }
+
+        init(of text: String) {
+            self.init(Prose.sentences(plain(text)))
+        }
+    }
+
+    /// Una habilidad con su forma de buscarla: las abreviaturas («FUE», «DES») en mayúsculas en
+    /// el texto original; el resto como palabras completas en el texto plegado.
+    private struct SkillKey {
+        let name: String
+        let padded: String
+        let abbreviation: NSRegularExpression?
+
+        init(_ name: String) {
+            self.name = name
+            padded = " \(Prose.fold(name)) "
+            abbreviation = name.count <= 3 ? try? NSRegularExpression(pattern: "\\b\(name)\\b") : nil
+        }
+
+        func found(in sentence: String, padded folded: String) -> Bool {
+            if let abbreviation {
+                return sentence.containsBytes(name)
+                    && abbreviation.firstMatch(in: sentence, range: NSRange(sentence.startIndex..., in: sentence)) != nil
+            }
+            return folded.containsBytes(padded)
+        }
+    }
+
+    private static let cthulhuKeys = cthulhuSkills.map(SkillKey.init)
+    private static let dndKeys = dndSkills.map(SkillKey.init)
+    private static let otherKeys = cthulhuKeys + dndKeys
+    private static let difficultyClass = try! NSRegularExpression(pattern: #"\bCD\s*\d+"#)
+    private static let sanityLoss = try! NSRegularExpression(
+        pattern: #"(\d+D?\d*/\d+D\d+(\s*\+\s*\d+)?|\d+/\d+)\s*(puntos\s*)?(de\s*)?(Cordura|COR)"#, options: .caseInsensitive)
+
     static func checks(in text: String, system: GameSystem) -> [AdventureGuide.Check] {
-        let skills = system == .dnd ? dndSkills : (system == .cthulhu ? cthulhuSkills : cthulhuSkills + dndSkills)
+        checks(in: Sentences(of: text), system: system)
+    }
+
+    static func checks(in sentences: Sentences, system: GameSystem) -> [AdventureGuide.Check] {
+        let skills = system == .dnd ? dndKeys : (system == .cthulhu ? cthulhuKeys : otherKeys)
         var result: [AdventureGuide.Check] = []
-        for sentence in Prose.sentences(plain(text)) {
-            let folded = Prose.fold(sentence)
-            let mentionsRoll = folded.contains("tirada") || folded.contains("prueba") || folded.contains("salvacion")
-                || folded.contains("dificil") || folded.contains("extrem") || sentence.range(of: #"\bCD\s*\d+"#, options: .regularExpression) != nil
+        for (sentence, folded) in zip(sentences.raw, sentences.padded) {
+            let mentionsRoll = folded.containsBytes("tirada") || folded.containsBytes("prueba") || folded.containsBytes("salvacion")
+                || folded.containsBytes("dificil") || folded.containsBytes("extrem")
+                || difficultyClass.firstMatch(in: sentence, range: NSRange(sentence.startIndex..., in: sentence)) != nil
             guard mentionsRoll else { continue }
-            for skill in skills {
-                let key = Prose.fold(skill)
-                let isAbbreviation = skill.count <= 3
-                let found = isAbbreviation
-                    ? sentence.range(of: "\\b\(skill)\\b", options: .regularExpression) != nil
-                    : folded.range(of: "\\b\(key)\\b", options: .regularExpression) != nil
-                guard found, !result.contains(where: { $0.skill == skill }) else { continue }
-                result.append(AdventureGuide.Check(skill: skill, difficulty: difficulty(in: sentence), purpose: sentence.truncated(words: 30)))
+            for skill in skills where skill.found(in: sentence, padded: folded) {
+                guard !result.contains(where: { $0.skill == skill.name }) else { continue }
+                result.append(AdventureGuide.Check(skill: skill.name, difficulty: difficulty(in: sentence), purpose: sentence.truncated(words: 30)))
             }
         }
         // Pérdidas de Cordura: «cuesta 1/1D4 de Cordura», «0/1D6 COR».
-        let sanity = #"(\d+D?\d*/\d+D\d+(\s*\+\s*\d+)?|\d+/\d+)\s*(puntos\s*)?(de\s*)?(Cordura|COR)"#
-        for sentence in Prose.sentences(plain(text)) {
-            guard let range = sentence.range(of: sanity, options: [.regularExpression, .caseInsensitive]) else { continue }
+        for sentence in sentences.raw {
+            guard let match = sanityLoss.firstMatch(in: sentence, range: NSRange(sentence.startIndex..., in: sentence)),
+                  let range = Range(match.range, in: sentence) else { continue }
             let value = sentence[range].split(separator: " ").first.map(String.init) ?? ""
             result.append(AdventureGuide.Check(skill: "Cordura", difficulty: value, purpose: sentence.truncated(words: 30)))
         }
@@ -229,18 +289,22 @@ enum HeuristicAnalyzer {
     // MARK: Pistas, peligros y personajes
 
     static func clues(in text: String) -> [DraftClue] {
+        clues(in: Sentences(of: text))
+    }
+
+    static func clues(in sentences: Sentences) -> [DraftClue] {
         var result: [DraftClue] = []
-        for sentence in Prose.sentences(plain(text)) {
-            let folded = Prose.fold(sentence)
-            let isClue = folded.hasPrefix("pista") || folded.contains(" pista") || folded.contains("encuentran")
-                || folded.contains("descubren") || folded.contains("revela") || folded.contains("averiguan")
-                || folded.contains("registro") || folded.contains("diario") || folded.contains("carta")
+        for (sentence, folded) in zip(sentences.raw, sentences.padded) where result.count < 4 {
+            // « pista» en el texto con espacios a los lados: empieza por «pista» o la nombra después.
+            let isClue = folded.containsBytes(" pista") || folded.containsBytes("encuentran")
+                || folded.containsBytes("descubren") || folded.containsBytes("revela") || folded.containsBytes("averiguan")
+                || folded.containsBytes("registro") || folded.containsBytes("diario") || folded.containsBytes("carta")
             guard isClue, sentence.count > 25 else { continue }
             let detail = sentence.replacingOccurrences(of: #"^Pista\s*(clave)?\s*:\s*"#, with: "", options: [.regularExpression, .caseInsensitive])
             result.append(DraftClue(
                 title: clueTitle(detail),
                 detail: detail.truncated(words: 40),
-                isCore: folded.contains("clave") || folded.contains("imprescindible") || folded.contains("esencial")
+                isCore: folded.containsBytes("clave") || folded.containsBytes("imprescindible") || folded.containsBytes("esencial")
             ))
         }
         return Array(result.prefix(4))
@@ -255,40 +319,49 @@ enum HeuristicAnalyzer {
         return sentence.truncated(words: 6).replacingOccurrences(of: "…", with: "").trimmed.capitalizedFirst
     }
 
+    private static let dangerKeys = ["ataca", "combate", "pierde", "daño", "muere", "muerte", "herid", "PV", "veneno", "trampa", "cordura"]
+        .map(Prose.fold)
+
     static func danger(in text: String, system: GameSystem) -> String {
-        let keys = ["ataca", "combate", "pierde", "daño", "muere", "muerte", "herid", "PV", "veneno", "trampa", "cordura"]
-        let sentences = Prose.sentences(plain(text)).filter { sentence in
-            let folded = Prose.fold(sentence)
-            return keys.contains { folded.contains(Prose.fold($0)) }
+        danger(in: Sentences(of: text))
+    }
+
+    static func danger(in sentences: Sentences) -> String {
+        var found: [String] = []
+        for (sentence, folded) in zip(sentences.raw, sentences.padded) where found.count < 2 {
+            if dangerKeys.contains(where: { folded.containsBytes($0) }) { found.append(sentence) }
         }
-        return sentences.prefix(2).joined(separator: " ")
+        return found.joined(separator: " ")
     }
 
     /// Personajes: el reconocedor de nombres de Apple acierta poco en guiones largos en español
     /// (toma «Marina Rivas» por un lugar), así que se combina con señales del propio texto.
+    private static let namePattern = try! NSRegularExpression(
+        pattern: #"(?:\b(?:don|doña|padre|madre|doctora?|señora?|señorita|fray|sor|capitán|inspectora?|profesora?|tío|tía)\s+)?\p{Lu}\p{Ll}+(?:\s+(?:de\s+)?\p{Lu}\p{Ll}+){0,2}"#)
+    /// «Xuacu, el …»: una aposición detrás del nombre.
+    private static let appositionStart = try! NSRegularExpression(pattern: #"^\s*,\s*(el|la|un|una|su)?\s*\p{Ll}+"#)
+    private static let appositionRole = try! NSRegularExpression(pattern: #"^\s*,\s*(el|la|un|una|su)?\s*[^,.;:()]{3,90}(?=[,.;:])"#)
+    private static let speechVerbs: Set<String> = ["dice", "dicen", "cuenta", "explica", "grita", "habla", "responde", "sabe", "quiere", "esta",
+                                                   "intenta", "mira", "recibe", "oculta", "miente", "teme", "busca", "pide", "niega", "confiesa"]
+
     static func characters(in script: String, appendix: String) -> [DraftCharacter] {
         let text = plain(script)
-        var personal: [String: Int] = [:]
-        var nonPersonal: Set<String> = []
-        let tagger = NLTagger(tagSchemes: [.nameType])
-        tagger.string = text
-        tagger.setLanguage(.spanish, range: text.startIndex..<text.endIndex)
-        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType,
-                             options: [.omitWhitespace, .omitPunctuation, .joinNames]) { tag, range in
-            let name = Prose.fold(String(text[range]))
-            if tag == .personalName { personal[name, default: 0] += 1 }
-            if tag == .placeName || tag == .organizationName { nonPersonal.insert(name) }
-            return true
-        }
+        let (personal, nonPersonal) = nameTags(in: text)
 
-        struct Candidate { var name: String; var count = 0; var score = 0; var firstSentence = ""; var apposition = ""; var hasHonorific = false }
+        struct Candidate {
+            var name: String
+            /// Orden de aparición en el guion: desempata la clasificación para que salga siempre igual.
+            var order: Int
+            var count = 0
+            var score = 0
+            var firstSentence = ""
+            var apposition = ""
+            var hasHonorific = false
+        }
         var candidates: [String: Candidate] = [:]
-        let pattern = #"(?:\b(?:don|doña|padre|madre|doctora?|señora?|señorita|fray|sor|capitán|inspectora?|profesora?|tío|tía)\s+)?\p{Lu}\p{Ll}+(?:\s+(?:de\s+)?\p{Lu}\p{Ll}+){0,2}"#
-        let regex = try? NSRegularExpression(pattern: pattern)
         let nsText = text as NSString
-        let speech = ["dice", "dicen", "cuenta", "explica", "grita", "habla", "responde", "sabe", "quiere", "esta",
-                      "intenta", "mira", "recibe", "oculta", "miente", "teme", "busca", "pide", "niega", "confiesa"]
-        regex?.enumerateMatches(in: text, range: NSRange(location: 0, length: nsText.length)) { match, _, _ in
+        let length = nsText.length
+        namePattern.enumerateMatches(in: text, range: NSRange(location: 0, length: length)) { match, _, _ in
             guard let range = match?.range else { return }
             let raw = nsText.substring(with: range)
             let words = raw.split(separator: " ").map(String.init)
@@ -300,15 +373,19 @@ enum HeuristicAnalyzer {
 
             var score = 0
             if hasHonorific { score += 3 }
-            let after = nsText.substring(from: range.location + range.length).prefix(110)
-            if after.range(of: #"^\s*,\s*(el|la|un|una|su)?\s*\p{Ll}+"#, options: .regularExpression) != nil { score += 2 }
-            let nextWord = Prose.words(String(after)).first ?? ""
-            if speech.contains(nextWord) { score += 2 }
-            let before = Prose.words(nsText.substring(to: range.location).suffix(14).description).last ?? ""
+            // Solo el trozo de texto de alrededor, sin copiar el resto del guion en cada nombre.
+            let end = range.location + range.length
+            let after = String(nsText.substring(with: NSRange(location: end, length: min(440, length - end))).prefix(110))
+            let afterRange = NSRange(location: 0, length: (after as NSString).length)
+            if appositionStart.firstMatch(in: after, options: .anchored, range: afterRange) != nil { score += 2 }
+            let nextWord = Prose.words(after).first ?? ""
+            if speechVerbs.contains(nextWord) { score += 2 }
+            let start = max(0, range.location - 56)
+            let before = Prose.words(String(nsText.substring(with: NSRange(location: start, length: range.location - start)).suffix(14))).last ?? ""
             if ["en", "hacia", "desde", "bajo", "frente", "sobre"].contains(before) { score -= 2 }
             if before == "de" || before == "del" { score -= 1 }
 
-            var candidate = candidates[key] ?? Candidate(name: hasHonorific ? raw : core)
+            var candidate = candidates[key] ?? Candidate(name: hasHonorific ? raw : core, order: candidates.count)
             candidate.count += 1
             candidate.score += score
             if hasHonorific {
@@ -317,7 +394,8 @@ enum HeuristicAnalyzer {
             }
             // «Xuacu, el único superviviente del naufragio, …» → papel del personaje.
             if candidate.apposition.isEmpty,
-               let role = after.range(of: #"^\s*,\s*(el|la|un|una|su)?\s*[^,.;:()]{3,90}(?=[,.;:])"#, options: .regularExpression) {
+               let match = appositionRole.firstMatch(in: after, options: .anchored, range: afterRange),
+               let role = Range(match.range, in: after) {
                 let value = after[role].trimmingCharacters(in: CharacterSet(charactersIn: ", ")).trimmed
                 let first = Prose.words(value).first ?? ""
                 if !["en", "a", "al", "de", "del", "con", "por", "para", "sin", "sobre", "tras", "que", "y", "o"].contains(first) {
@@ -325,14 +403,16 @@ enum HeuristicAnalyzer {
                 }
             }
             if candidate.firstSentence.isEmpty {
-                candidate.firstSentence = Prose.sentences(nsText.substring(with: NSRange(location: max(0, range.location - 120), length: min(260, nsText.length - max(0, range.location - 120)))))
+                candidate.firstSentence = Prose.sentences(nsText.substring(with: NSRange(location: max(0, range.location - 120), length: min(260, length - max(0, range.location - 120)))))
                     .first { Prose.fold($0).contains(key) } ?? ""
             }
             candidates[key] = candidate
         }
 
         var characters: [DraftCharacter] = []
-        let ranked = candidates.values.sorted { $0.score + $0.count > $1.score + $1.count }
+        let ranked = candidates.values.sorted {
+            ($0.score + $0.count, -$0.order) > ($1.score + $1.count, -$1.order)
+        }
         for candidate in ranked {
             let key = Prose.fold(candidate.name)
             let words = Prose.words(candidate.name)
@@ -364,14 +444,79 @@ enum HeuristicAnalyzer {
         "que", "quien", "como", "donde", "pista", "escena", "acto", "parte", "duracion", "aventura", "gancho",
         "trasfondo", "desenlaces", "estadisticas", "recompensa", "fracaso", "lee", "leed", "nota", "ojo", "tirada",
         "mas", "menos", "muy", "ademas", "asi", "ya", "otro", "otra", "dos", "tres", "cien", "hasta",
+        "les", "le", "lo", "nos", "os", "me", "te", "se", "ella", "ellas", "ellos", "usted", "ustedes",
     ]
 
     /// Términos de juego que van en mayúscula y no son personajes.
-    static var excludedNames: Set<String> {
-        Set((cthulhuSkills + dndSkills).map(Prose.fold)).union([
-            "cordura", "pv", "cor", "pm", "profundo", "profundos", "primigenios", "mitos", "guardian", "master",
-            "director de juego", "investigadores", "jugadores", "llamada de cthulhu", "cthulhu", "dungeons",
-        ])
+    static let excludedNames: Set<String> = Set((cthulhuSkills + dndSkills).map(Prose.fold)).union([
+        "cordura", "pv", "cor", "pm", "profundo", "profundos", "primigenios", "mitos", "guardian", "master",
+        "director de juego", "investigadores", "jugadores", "llamada de cthulhu", "cthulhu", "dungeons",
+    ])
+
+    /// Nombres que el reconocedor de Apple etiqueta como personas, y como lugares u organizaciones.
+    /// Es lo más lento del análisis, así que el texto se reparte entre los núcleos en trozos que
+    /// terminan en un final de frase (el reconocedor trabaja frase a frase).
+    static func nameTags(in text: String, pieces count: Int? = nil) -> (personal: [String: Int], other: Set<String>) {
+        let count = count ?? max(1, min(ProcessInfo.processInfo.activeProcessorCount, text.utf16.count / 12_000))
+        let pieces = sentencePieces(of: text, count: count)
+        var results = [(personal: [String: Int], other: Set<String>)](repeating: ([:], []), count: pieces.count)
+        results.withUnsafeMutableBufferPointer { buffer in
+            DispatchQueue.concurrentPerform(iterations: pieces.count) { index in
+                let piece = pieces[index]
+                var personal: [String: Int] = [:]
+                var other: Set<String> = []
+                let tagger = NLTagger(tagSchemes: [.nameType])
+                tagger.string = piece
+                tagger.setLanguage(.spanish, range: piece.startIndex..<piece.endIndex)
+                tagger.enumerateTags(in: piece.startIndex..<piece.endIndex, unit: .word, scheme: .nameType,
+                                     options: [.omitWhitespace, .omitPunctuation, .joinNames]) { tag, range in
+                    let name = Prose.fold(String(piece[range]))
+                    if tag == .personalName { personal[name, default: 0] += 1 }
+                    if tag == .placeName || tag == .organizationName { other.insert(name) }
+                    return true
+                }
+                buffer[index] = (personal, other)
+            }
+        }
+        return results.reduce(into: ([:], [])) { total, part in
+            total.personal.merge(part.personal, uniquingKeysWith: +)
+            total.other.formUnion(part.other)
+        }
+    }
+
+    /// Parte el texto en `count` trozos parecidos, cortando siempre en un final de frase: un
+    /// espacio detrás de «.», «!», «?» o «…» que cierra una palabra de cuatro letras o más (así
+    /// no se corta en «Sr. Rivas» ni en «Dra. Cueto»).
+    static func sentencePieces(of text: String, count: Int) -> [String] {
+        guard count > 1 else { return [text] }
+        let target = text.utf8.count / count
+        var pieces: [String] = []
+        var start = text.startIndex
+        var utf8Offset = 0
+        var index = text.startIndex
+        var previous: Character?
+        var letters = 0
+        var lettersBeforeMark = 0
+        while index < text.endIndex {
+            let character = text[index]
+            let next = text.index(after: index)
+            utf8Offset += character.utf8.count
+            if character.isLetter {
+                letters += 1
+            } else {
+                if let mark = character.unicodeScalars.first, ".!?…".unicodeScalars.contains(mark) { lettersBeforeMark = letters }
+                letters = 0
+            }
+            if pieces.count < count - 1, utf8Offset >= target * (pieces.count + 1), character.isWhitespace,
+               let previous, ".!?…".contains(previous), lettersBeforeMark >= 4 {
+                pieces.append(String(text[start..<next]))
+                start = next
+            }
+            previous = character
+            index = next
+        }
+        pieces.append(String(text[start...]))
+        return pieces
     }
 
     static func statsLine(for name: String, in appendix: String) -> String? {

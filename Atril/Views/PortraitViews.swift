@@ -22,6 +22,32 @@ enum PortraitImage {
         return output as Data
     }
 
+    private struct ThumbnailKey: Hashable {
+        let data: Data
+        let pixels: Int
+    }
+
+    /// Miniaturas ya decodificadas. Un retrato se ve pequeño en listas, escenas y fichas: sin
+    /// esto, cada repintado volvería a decodificar la imagen entera (y a guardarla en memoria
+    /// a tamaño completo).
+    private static let thumbnails = BoundedCache<ThumbnailKey, CGImage>(limit: 96)
+
+    /// El retrato reducido a `pixels` de lado, decodificado una sola vez.
+    static func thumbnail(_ data: Data, pixels: Int) -> CGImage? {
+        let key = ThumbnailKey(data: data, pixels: pixels)
+        if let hit = thumbnails[key] { return hit }
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: max(pixels, 1),
+        ]
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+        thumbnails.insert(image, for: key)
+        return image
+    }
+
     /// Descripción para Image Playground: aspecto, papel y época, sin secretos de la trama.
     static func concept(for npc: AdventureGuide.NPC, system: GameSystem) -> String {
         let era: String = switch system {
@@ -51,11 +77,13 @@ struct PortraitAvatar: View {
     let data: Data?
     var size: CGFloat = 44
     var tint: Color = .accentColor
+    @Environment(\.displayScale) private var displayScale
 
     var body: some View {
         Group {
-            if let data, let image = Image(portraitData: data) {
-                image.resizable().scaledToFill()
+            // Con margen para que una foto apaisada no se vea borrosa al recortarla en círculo.
+            if let data, let image = PortraitImage.thumbnail(data, pixels: Int((size * displayScale * 1.5).rounded(.up))) {
+                Image(decorative: image, scale: displayScale).resizable().scaledToFill()
             } else {
                 Text(initials)
                     .font(.system(size: size * 0.38, weight: .semibold, design: .rounded))

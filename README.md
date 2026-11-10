@@ -50,6 +50,24 @@ Los PDF escaneados se leen con OCR (Vision) en el propio dispositivo, y la altur
 
 Las estadísticas del guion («Profundo: FUE 70, … PV 13», o los bloques de D&D con «Clase de Armadura» y «Puntos de golpe») se detectan para añadir enemigos al combate de un toque.
 
+### Rendimiento
+
+Medido en Release en un Mac con una campaña de prueba de 44.000 palabras y 48 escenas (`Benchmarks`):
+
+| | Antes | Ahora |
+|---|---|---|
+| Organizar el guion sin IA | 2,2 s en el hilo principal | 0,24 s en segundo plano |
+| Abrir la mesa | 283 ms | 6 ms |
+| Buscar en la aventura, por tecla | 3,9 ms | 0,1 ms |
+| Repintar la ficha de la aventura | ~40 ms | < 1 ms |
+| Reconocer 4 páginas escaneadas | 0,77 s | 0,64 s |
+
+- La guía se decodifica una vez por versión y las palabras, la huella y los párrafos del guion se calculan una vez (`Caches.swift`). El buscador del guion se construye en segundo plano al abrir la aventura y lo comparten la mesa, la búsqueda y el tutor.
+- En el análisis, el reconocedor de nombres de Apple (lo más lento) se reparte entre los núcleos; las frases se trocean con un tokenizador reutilizado, el texto se pliega sin pasar por Foundation cuando es latino y las búsquedas de texto comparan bytes (`containsBytes`). Las expresiones regulares se compilan una vez. El resultado es idéntico al de antes (comprobado con `SnapshotTests`) y ya no depende del orden aleatorio de los diccionarios.
+- En mesa, la respuesta que está llegando repinta solo su tarjeta, el Markdown se interpreta una vez por mensaje, la sesión del modelo se deja precalentada para la siguiente pregunta y los retratos se decodifican una vez al tamaño en que se ven.
+- El motor de audio se para cuando no suena ningún ambiente. Las cachés se vacían si el iPad avisa de que falta memoria.
+- Lo que no se puede acelerar: el modelo de Apple en el dispositivo atiende las peticiones de una en una (6 escenas tardan lo mismo pidiéndolas de una en una que a la vez) y PDFKit lee las páginas de una en una (~5 ms cada una).
+
 ## Requisitos
 
 - Xcode 27, iPadOS 18+ / macOS 15+ (la IA de Apple necesita 26+; antes, modo básico).
@@ -72,7 +90,9 @@ Las estadísticas del guion («Profundo: FUE 70, … PV 13», o los bloques de D
 
 - `-seedDemo` crea la aventura de ejemplo con una sesión a medias; `-openPlay` abre la mesa; `-openPanel dice|tables|party|combat|combatstrip|map|end|handout|document|ambience|search` (en la mesa) o `prep` (en la guía); `-openTab plan|map|scenes|npcs…`; `-ask "pregunta"`.
 - `-seedImport` importa el guion de ejemplo como un archivo nuevo (guía básica + IA); `-openImport` abre la pantalla de importar.
-- `-probeAI` analiza el ejemplo con cada modelo de Apple disponible, pregunta al tutor e imprime tiempos y resultados (`PROBE_TIERS=onDevice` para elegir; `PROBE_PDF=ruta` para probar un PDF dentro del contenedor de la app y `PROBE_QUESTION` para cambiar la pregunta).
+- `-probeAI` analiza el ejemplo con cada modelo de Apple disponible, pregunta al tutor e imprime tiempos y resultados (`PROBE_TIERS=onDevice` para elegir; `PROBE_PDF=ruta` para probar un PDF dentro del contenedor de la app, `PROBE_QUESTION` para cambiar la pregunta y `PROBE_PARALLEL=1` para medir si preparar varias escenas a la vez acaba antes).
+- `-searchQuery "texto"` (con `-openPanel search`) entra ya buscando.
+- Medidas: `TEST_RUNNER_ATRIL_BENCH=1 xcodebuild test -configuration Release ENABLE_TESTABILITY=YES ENABLE_HARDENED_RUNTIME=NO -only-testing:AtrilTests/Benchmarks …`. Instantánea de resultados para comparar versiones: `TEST_RUNNER_ATRIL_SNAPSHOT=nombre.json` (con `TEST_RUNNER_SWIFT_DETERMINISTIC_HASHING=1`).
 - `-hasAPIKey YES` simula tener clave de Claude.
 
 ```bash

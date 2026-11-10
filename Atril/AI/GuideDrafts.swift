@@ -203,12 +203,79 @@ enum Prose {
 
     /// Minúsculas, sin acentos ni signos.
     static func fold(_ value: String) -> String {
-        value.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "es"))
+        latinFold(value) ?? foundationFold(value)
+    }
+
+    private static let spanish = Locale(identifier: "es")
+
+    static func foundationFold(_ value: String) -> String {
+        value.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: spanish)
             .lowercased()
             .components(separatedBy: CharacterSet.alphanumerics.inverted)
             .filter { !$0.isEmpty }
             .joined(separator: " ")
     }
+
+    /// El mismo resultado que `foundationFold` sin pasar por Foundation, para el texto de casi
+    /// todos los guiones: ASCII, letras latinas con tilde, diéresis o eñe, ordinales y signos de
+    /// puntuación o espacios. Ante cualquier otro carácter devuelve `nil` y se usa Foundation.
+    static func latinFold(_ value: String) -> String? {
+        var output: [UInt8] = []
+        output.reserveCapacity(value.utf8.count)
+        var pendingSpace = false
+        for scalar in value.unicodeScalars {
+            let letter: UInt8
+            switch scalar.value {
+            case 0x30...0x39, 0x61...0x7A: letter = UInt8(scalar.value)
+            case 0x41...0x5A: letter = UInt8(scalar.value + 0x20)
+            case 0x00...0x7F: letter = 0
+            case 0xAA, 0xBA:
+                // «ª» y «º» («7.ª edición», «2º piso») son letras y Foundation las deja tal cual.
+                if pendingSpace {
+                    output.append(0x20)
+                    pendingSpace = false
+                }
+                output.append(0xC2)
+                output.append(UInt8(scalar.value))
+                continue
+            case 0xC0...0xFF:
+                letter = latin1Letters[Int(scalar.value - 0xC0)]
+                if letter == 0xFF { return nil }
+            default:
+                switch scalar.properties.generalCategory {
+                case .connectorPunctuation, .dashPunctuation, .openPunctuation, .closePunctuation, .initialPunctuation,
+                     .finalPunctuation, .otherPunctuation, .spaceSeparator, .lineSeparator, .paragraphSeparator,
+                     .mathSymbol, .currencySymbol, .otherSymbol:
+                    letter = 0
+                default:
+                    return nil
+                }
+            }
+            if letter == 0 {
+                pendingSpace = !output.isEmpty
+            } else {
+                if pendingSpace {
+                    output.append(0x20)
+                    pendingSpace = false
+                }
+                output.append(letter)
+            }
+        }
+        return String(decoding: output, as: UTF8.self)
+    }
+
+    /// U+00C0…U+00FF: la letra sin tilde, 0 para los signos (× y ÷) y 0xFF para lo que no se
+    /// sabe plegar sin Foundation (Æ, Ð, Ø, Þ, ß…).
+    private static let latin1Letters: [UInt8] = {
+        let map = "aaaaaa?ceeeeiiii?nooooo-?uuuuy??aaaaaa?ceeeeiiii?nooooo-?uuuuy?y"
+        return map.utf8.map { byte in
+            switch byte {
+            case UInt8(ascii: "-"): 0
+            case UInt8(ascii: "?"): 0xFF
+            default: byte
+            }
+        }
+    }()
 
     static func words(_ value: String) -> [String] { fold(value).split(separator: " ").map(String.init) }
 
@@ -234,16 +301,6 @@ enum Prose {
     /// Quita adornos de Markdown y comillas que el modelo pone a veces en títulos y nombres.
     static func cleanLabel(_ value: String) -> String {
         value.trimmed.trimmingCharacters(in: CharacterSet(charactersIn: "#*-•\"'«»“”[]").union(.whitespaces)).trimmed
-    }
-
-    /// Frases del texto que nombran a alguien, para darle al modelo solo lo que le concierne.
-    static func sentences(mentioning name: String, in text: String, limit: Int) -> [String] {
-        let keys = words(name).filter { $0.count > 3 }
-        guard !keys.isEmpty else { return [] }
-        return Array(sentences(text).filter { sentence in
-            let folded = fold(sentence)
-            return keys.contains { folded.contains($0) }
-        }.prefix(limit))
     }
 
     /// Valores de relleno: el modelo pequeño a veces devuelve la descripción del campo
@@ -275,12 +332,30 @@ enum Prose {
         return "\(x) \(y)"
     }
 
+    /// Frases del texto, con las reglas del idioma del sistema (como `enumerateSubstrings` con
+    /// `.bySentences` y `.localized`). El tokenizador se reutiliza en cada hilo: crearlo para
+    /// cada escena costaba diez veces más que trocear.
     static func sentences(_ value: String) -> [String] {
+        let text = value as NSString
+        let tokenizer = sentenceTokenizer()
+        CFStringTokenizerSetString(tokenizer, text, CFRange(location: 0, length: text.length))
         var result: [String] = []
-        value.enumerateSubstrings(in: value.startIndex..., options: [.bySentences, .localized]) { sentence, _, _, _ in
-            if let sentence = sentence?.trimmed, !sentence.isEmpty { result.append(sentence) }
+        while CFStringTokenizerAdvanceToNextToken(tokenizer) != [] {
+            let range = CFStringTokenizerGetCurrentTokenRange(tokenizer)
+            let sentence = text.substring(with: NSRange(location: range.location, length: range.length)).trimmed
+            if !sentence.isEmpty { result.append(sentence) }
         }
         return result
+    }
+
+    private static func sentenceTokenizer() -> CFStringTokenizer {
+        let locale = CFLocaleCopyCurrent()
+        let key = "atril.sentences.\(CFLocaleGetIdentifier(locale).rawValue)"
+        let storage = Thread.current.threadDictionary
+        if let existing = storage[key] { return existing as! CFStringTokenizer }
+        let tokenizer = CFStringTokenizerCreate(nil, "" as CFString, CFRange(location: 0, length: 0), kCFStringTokenizerUnitSentence, locale)!
+        storage[key] = tokenizer
+        return tokenizer
     }
 }
 

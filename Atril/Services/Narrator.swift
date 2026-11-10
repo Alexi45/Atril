@@ -19,12 +19,18 @@ final class Narrator: NSObject {
         synthesizer.delegate = self
     }
 
-    /// Voces en español, de mejor a peor calidad.
+    /// Voces en español, de mejor a peor calidad. Pedirle la lista al sistema es lento y los
+    /// ajustes la piden en cada repintado: se guarda un minuto (por si se descarga una voz).
     static var spanishVoices: [AVSpeechSynthesisVoice] {
-        AVSpeechSynthesisVoice.speechVoices()
+        if let cached = voiceCache, cached.checkedAt.timeIntervalSinceNow > -60 { return cached.voices }
+        let voices = AVSpeechSynthesisVoice.speechVoices()
             .filter { $0.language.hasPrefix("es") }
             .sorted { ($0.quality.rawValue, $0.language == "es-ES" ? 1 : 0) > ($1.quality.rawValue, $1.language == "es-ES" ? 1 : 0) }
+        voiceCache = (voices, .now)
+        return voices
     }
+
+    private static var voiceCache: (voices: [AVSpeechSynthesisVoice], checkedAt: Date)?
 
     static var preferredVoice: AVSpeechSynthesisVoice? {
         if let id = UserDefaults.standard.string(forKey: voiceKey), let voice = AVSpeechSynthesisVoice(identifier: id) {

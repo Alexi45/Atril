@@ -42,7 +42,7 @@ struct ImporterTests {
             "Xuacu pide una tirada de Persuasion.",
         ])
         defer { try? FileManager.default.removeItem(at: url) }
-        #expect((PDFDocument(url: url)?.string ?? "").isEmpty)
+        #expect(PDFDocument(url: url)?.string?.isEmpty ?? true)
 
         var messages: [String] = []
         let text = try await ScriptImporter.load(url) { messages.append($0) }

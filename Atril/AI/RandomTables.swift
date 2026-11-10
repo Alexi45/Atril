@@ -212,7 +212,7 @@ extension StatBlock {
     static func candidates(in script: String) -> [EnemyCandidate] {
         var found: [EnemyCandidate] = []
         let paragraphs = script.components(separatedBy: "\n").map(\.trimmed).filter { !$0.isEmpty }
-        for (index, paragraph) in paragraphs.enumerated() {
+        for (index, paragraph) in paragraphs.enumerated() where StatBlock.mentionsHitPoints(paragraph) {
             let text = paragraph.trimmingCharacters(in: CharacterSet(charactersIn: ">*-• "))
             let stats = StatBlock(parsing: text)
             guard stats.hp != nil else { continue }

@@ -71,10 +71,14 @@ final class AmbiencePlayer {
     private let engine = AVAudioEngine()
     private var synths: [Ambience: AmbienceSynth] = [:]
     private var nodes: [Ambience: AVAudioSourceNode] = [:]
+    private var pauseTask: Task<Void, Never>?
 
     private init() {}
 
     func isPlaying(_ ambience: Ambience) -> Bool { active.contains(ambience) }
+
+    /// Si el motor de audio está en marcha (interno para poder probar que se para).
+    var isEngineRunning: Bool { engine.isRunning }
 
     func toggle(_ ambience: Ambience) {
         if active.contains(ambience) { stop(ambience) } else { play(ambience) }
@@ -87,6 +91,7 @@ final class AmbiencePlayer {
     }
 
     func play(_ ambience: Ambience) {
+        pauseTask?.cancel()
         guard startEngine() else { return }
         let synth = synths[ambience] ?? attach(ambience)
         synth.targetGain = 1
@@ -96,6 +101,18 @@ final class AmbiencePlayer {
     func stop(_ ambience: Ambience) {
         synths[ambience]?.targetGain = 0
         active.remove(ambience)
+        if active.isEmpty { pauseWhenFaded() }
+    }
+
+    /// Sin nada sonando, el motor se para al terminar el fundido: si no, el audio del sistema
+    /// seguiría despierto toda la partida mezclando silencio y gastando batería.
+    private func pauseWhenFaded() {
+        pauseTask?.cancel()
+        pauseTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard let self, !Task.isCancelled, self.active.isEmpty else { return }
+            self.engine.pause()
+        }
     }
 
     func stopAll() {

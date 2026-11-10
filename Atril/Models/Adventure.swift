@@ -43,15 +43,22 @@ final class Adventure {
     }
 
     var guide: AdventureGuide? {
-        get { guideData.flatMap { try? JSONDecoder().decode(AdventureGuide.self, from: $0) } }
+        get { guideData.flatMap(AdventureGuide.decode) }
         set {
-            guideData = newValue.flatMap { try? JSONEncoder().encode($0) }
-            analyzedScriptHash = newValue == nil ? nil : Self.hash(script)
+            guideData = newValue?.encoded()
+            analyzedScriptHash = newValue == nil ? nil : scriptHash
             updatedAt = .now
         }
     }
 
-    var isGuideStale: Bool { guideData != nil && analyzedScriptHash != Self.hash(script) }
+    var isGuideStale: Bool { guideData != nil && analyzedScriptHash != scriptHash }
+
+    /// Huella del guion actual. Esto y lo siguiente se calcula una vez por versión del guion:
+    /// las vistas lo piden en cada repintado.
+    var scriptHash: String { ScriptFacts.hash.value(for: self, script: script) }
+    var wordCount: Int { ScriptFacts.words.value(for: self, script: script) }
+    /// El guion en párrafos, para mostrarlo.
+    var scriptParagraphs: [String] { ScriptFacts.paragraphs.value(for: self, script: script) }
 
     /// La guía la hicieron las heurísticas, no una IA.
     var isBasicGuide: Bool { guideData != nil && (guideEngine ?? "basic") == "basic" }
@@ -94,11 +101,15 @@ final class Adventure {
         updatedAt = .now
     }
 
-    var wordCount: Int { script.split(whereSeparator: \.isWhitespace).count }
-
     static func hash(_ text: String) -> String {
         SHA256.hash(data: Data(text.utf8)).prefix(12).map { String(format: "%02x", $0) }.joined()
     }
+}
+
+private enum ScriptFacts {
+    static let hash = ScriptDerived { Adventure.hash($0) }
+    static let words = ScriptDerived { WordCounter.count($0) }
+    static let paragraphs = ScriptDerived { $0.components(separatedBy: "\n\n") }
 }
 
 /// Retrato de un PNJ. Va por nombre y no por id: así sobrevive a un nuevo análisis del guion.

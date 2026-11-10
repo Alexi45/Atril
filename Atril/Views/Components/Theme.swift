@@ -141,41 +141,61 @@ struct BulletRow: View {
 /// Renderizado ligero del Markdown que devuelve el tutor: párrafos, viñetas y negritas.
 struct MarkdownText: View {
     let text: String
+    /// Texto que aún está llegando: cambia con cada palabra y no merece guardarse.
+    var isLive = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
-                switch block {
-                case .heading(let value):
-                    Text(inline(value)).font(.subheadline.weight(.semibold)).padding(.top, 4)
-                case .bullet(let value):
+            ForEach(Array((isLive ? Self.parse(Self.closingOpenBold(text)) : Self.blocks(text)).enumerated()), id: \.offset) { _, block in
+                switch block.kind {
+                case .heading:
+                    Text(block.text).font(.subheadline.weight(.semibold)).padding(.top, 4)
+                case .bullet:
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("•").foregroundStyle(.secondary)
-                        Text(inline(value)).fixedSize(horizontal: false, vertical: true)
+                        Text(block.text).fixedSize(horizontal: false, vertical: true)
                     }
-                case .paragraph(let value):
-                    Text(inline(value)).fixedSize(horizontal: false, vertical: true)
+                case .paragraph:
+                    Text(block.text).fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
         .textSelection(.enabled)
     }
 
-    private enum Block { case heading(String), bullet(String), paragraph(String) }
+    struct Block {
+        enum Kind { case heading, bullet, paragraph }
+        let kind: Kind
+        let text: AttributedString
+    }
 
-    private var blocks: [Block] {
+    /// Interpretar el Markdown es lo más caro de pintar una respuesta: se hace una vez por texto.
+    private static let parsed = BoundedCache<String, [Block]>(limit: 256)
+
+    static func blocks(_ text: String) -> [Block] {
+        parsed.value(for: text) { parse(text) }
+    }
+
+    static func parse(_ text: String) -> [Block] {
         text.components(separatedBy: "\n").compactMap { raw in
             let line = raw.trimmingCharacters(in: .whitespaces)
             if line.isEmpty { return nil }
-            if line.hasPrefix("#") { return .heading(line.trimmingCharacters(in: CharacterSet(charactersIn: "# "))) }
+            if line.hasPrefix("#") { return Block(kind: .heading, text: inline(line.trimmingCharacters(in: CharacterSet(charactersIn: "# ")))) }
             for marker in ["- ", "* ", "• "] where line.hasPrefix(marker) {
-                return .bullet(String(line.dropFirst(marker.count)))
+                return Block(kind: .bullet, text: inline(String(line.dropFirst(marker.count))))
             }
-            return .paragraph(line)
+            return Block(kind: .paragraph, text: inline(line))
         }
     }
 
-    private func inline(_ value: String) -> AttributedString {
+    /// Mientras llega la respuesta, una negrita a medio escribir («**Mantén a…») se vería con
+    /// sus asteriscos: se cierra provisionalmente al final del texto.
+    static func closingOpenBold(_ text: String) -> String {
+        let lastLine = text.split(separator: "\n", omittingEmptySubsequences: false).last ?? ""
+        return lastLine.components(separatedBy: "**").count.isMultiple(of: 2) ? text + "**" : text
+    }
+
+    private static func inline(_ value: String) -> AttributedString {
         (try? AttributedString(markdown: value, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
             ?? AttributedString(value)
     }

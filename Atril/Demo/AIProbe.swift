@@ -12,6 +12,11 @@ enum AIProbe {
         #if canImport(FoundationModels)
         guard #available(iOS 26.0, macOS 26.0, *) else { return }
         let requested = ProcessInfo.processInfo.environment["PROBE_TIERS"]?.split(separator: ",").compactMap { AppleAI.Tier(rawValue: String($0)) }
+        // `PROBE_PARALLEL=1`: mide si preparar varias escenas a la vez acaba antes.
+        if ProcessInfo.processInfo.environment["PROBE_PARALLEL"] != nil, let tier = (requested ?? status.tiers).first {
+            await parallelExperiment(tier: tier)
+            return
+        }
         for tier in requested ?? status.tiers {
             let start = Date()
             do {
@@ -61,5 +66,48 @@ enum AIProbe {
         }
         #endif
     }
+
+    #if canImport(FoundationModels)
+    @available(iOS 26.0, macOS 26.0, *)
+    @MainActor
+    static func parallelExperiment(tier: AppleAI.Tier) async {
+        let basic = HeuristicAnalyzer.drafts(script: SampleAdventure.script, system: .cthulhu)
+        let names = basic.characters.map(\.name).joined(separator: ", ")
+        let background = basic.overview.truth.truncated(words: 90)
+        let prompts = zip(basic.scenes, basic.bodies).map { chunk, body in
+            AppleAnalyzer.enrichmentPrompt(title: chunk.scenes.first?.title ?? "", body: body, background: background,
+                                           names: names, wordLimit: 550)
+        }
+        // La primera petición carga el modelo: no cuenta.
+        _ = try? await AppleAnalyzer.enrichment(prompt: prompts[0], system: .cthulhu, tier: tier)
+        for width in [1, 2, 3, 6] {
+            let start = Date()
+            var errors: [String] = []
+            await withTaskGroup(of: String?.self) { group in
+                var next = 0, running = 0
+                while next < prompts.count || running > 0 {
+                    while running < width, next < prompts.count {
+                        let prompt = prompts[next]
+                        next += 1
+                        running += 1
+                        group.addTask {
+                            do {
+                                _ = try await AppleAnalyzer.enrichment(prompt: prompt, system: .cthulhu, tier: tier)
+                                return nil
+                            } catch {
+                                return "\(error)"
+                            }
+                        }
+                    }
+                    if let result = await group.next() {
+                        running -= 1
+                        if let result { errors.append(result) }
+                    }
+                }
+            }
+            print("== \(width) a la vez: \(prompts.count) escenas en \(String(format: "%.1f", Date().timeIntervalSince(start))) s, errores: \(errors)")
+        }
+    }
+    #endif
 }
 #endif

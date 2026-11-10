@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct TutorPanel: View {
-    @Bindable var controller: PlayController
-    @FocusState private var inputFocused: Bool
+    let controller: PlayController
     @State private var showSettings = false
     @State private var confirmClear = false
 
@@ -12,7 +11,7 @@ struct TutorPanel: View {
             Divider()
             conversation
             Divider()
-            composer
+            Composer(controller: controller)
         }
         .background(Color.canvas)
         .sheet(isPresented: $showSettings, onDismiss: controller.refreshBackend) { NavigationStack { SettingsView() } }
@@ -65,7 +64,7 @@ struct TutorPanel: View {
                             .id(message.id)
                     }
                     if controller.isWaiting {
-                        pendingAnswer.id("pending")
+                        PendingAnswer(controller: controller, proxy: proxy).id("pending")
                     }
                     if let error = controller.tutorError {
                         Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -78,7 +77,6 @@ struct TutorPanel: View {
                 .padding(14)
             }
             .onChange(of: controller.messages.count) { scrollToBottom(proxy) }
-            .onChange(of: controller.streamingText) { proxy.scrollTo("bottom", anchor: .bottom) }
             .onAppear { proxy.scrollTo("bottom", anchor: .bottom) }
         }
     }
@@ -104,29 +102,14 @@ struct TutorPanel: View {
         }
         .padding(.bottom, 4)
     }
+}
 
-    private var pendingAnswer: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if controller.streamingText.isEmpty {
-                HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
-                    Text(controller.isThinking ? "Pensando…" : "Consultando el guion…")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                MarkdownText(text: controller.streamingText)
-            }
-            Button("Detener", systemImage: "stop.circle") { controller.cancelTutor() }
-                .font(.caption)
-                .buttonStyle(.borderless)
-        }
-        .card(padding: 12)
-    }
+/// Campo de la pregunta y atajos. Vista aparte: lo que se escribe no repinta la conversación.
+private struct Composer: View {
+    @Bindable var controller: PlayController
+    @FocusState private var inputFocused: Bool
 
-    // MARK: Entrada
-
-    private var composer: some View {
+    var body: some View {
         VStack(spacing: 10) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
@@ -181,6 +164,33 @@ struct TutorPanel: View {
         } else {
             controller.send(action.prompt)
         }
+    }
+}
+
+/// La respuesta que está llegando. Vista aparte: es lo único que lee el texto en curso, así que
+/// cada palabra nueva repinta solo esta tarjeta y no la conversación entera.
+private struct PendingAnswer: View {
+    let controller: PlayController
+    let proxy: ScrollViewProxy
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if controller.streamingText.isEmpty {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text(controller.isThinking ? "Pensando…" : "Consultando el guion…")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                MarkdownText(text: controller.streamingText, isLive: true)
+            }
+            Button("Detener", systemImage: "stop.circle") { controller.cancelTutor() }
+                .font(.caption)
+                .buttonStyle(.borderless)
+        }
+        .card(padding: 12)
+        .onChange(of: controller.streamingText) { proxy.scrollTo("bottom", anchor: .bottom) }
     }
 }
 

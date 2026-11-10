@@ -22,16 +22,38 @@ final class AnalysisCenter {
 
     private(set) var jobs: [UUID: Job] = [:]
     private(set) var errors: [UUID: String] = [:]
+    /// Aventuras con un análisis de IA en marcha. Aparte de `jobs`, que cambia con cada paso del
+    /// progreso: la lista de aventuras solo depende de esto y no se repinta a cada paso.
+    private(set) var running: Set<UUID> = []
+    /// Aventuras cuya guía básica se está calculando.
+    private(set) var organizing: Set<UUID> = []
     private var tasks: [UUID: Task<Void, Never>] = [:]
+    /// Cuándo se puso la guía de cada aventura, para no pisarla con una básica que empezó antes.
+    private var appliedAt: [UUID: Date] = [:]
 
-    func isRunning(_ adventure: Adventure) -> Bool { jobs[adventure.id] != nil }
+    func isRunning(_ adventure: Adventure) -> Bool { running.contains(adventure.id) }
+    func isOrganizing(_ adventure: Adventure) -> Bool { organizing.contains(adventure.id) }
     func job(for adventure: Adventure) -> Job? { jobs[adventure.id] }
     func error(for adventure: Adventure) -> String? { errors[adventure.id] }
 
-    /// Guía básica inmediata, sin modelo.
+    /// Guía básica, sin modelo. Se calcula fuera del hilo principal: en un guion largo lleva
+    /// unas décimas y la interfaz no debe pararse.
     func organizeBasic(_ adventure: Adventure) {
-        let guide = HeuristicAnalyzer.analyze(script: adventure.script, system: adventure.system)
-        apply(guide, engine: "basic", to: adventure)
+        let id = adventure.id
+        let script = adventure.script
+        let system = adventure.system
+        let requestedAt = Date()
+        organizing.insert(id)
+        Task { [weak self] in
+            let guide = await Task.detached(priority: .userInitiated) {
+                HeuristicAnalyzer.analyze(script: script, system: system)
+            }.value
+            guard let self else { return }
+            self.organizing.remove(id)
+            // Si mientras tanto cambió el guion o llegó otra guía, esta ya no vale.
+            guard adventure.script == script, (self.appliedAt[id] ?? .distantPast) < requestedAt else { return }
+            self.apply(guide, engine: "basic", to: adventure)
+        }
     }
 
     /// Prepara la guía con el mejor motor disponible (o el indicado).
@@ -39,12 +61,13 @@ final class AnalysisCenter {
         let id = adventure.id
         guard jobs[id] == nil else { return }
         errors[id] = nil
-        if adventure.guideData == nil { organizeBasic(adventure) }
         guard backend != .basic else {
             organizeBasic(adventure)
             return
         }
+        if adventure.guideData == nil { organizeBasic(adventure) }
         jobs[id] = Job(backend: backend)
+        running.insert(id)
         // Un análisis largo no debe interrumpirse porque se apague la pantalla.
         KeepAwake.acquire()
         let title = adventure.title
@@ -71,6 +94,7 @@ final class AnalysisCenter {
                 self?.errors[id] = error.localizedDescription
             }
             self?.jobs[id] = nil
+            self?.running.remove(id)
             self?.tasks[id] = nil
             KeepAwake.release()
         }
@@ -88,7 +112,7 @@ final class AnalysisCenter {
             }
             // Si la IA se ha saltado buena parte de las escenas, se quedan las de la guía básica
             // y de la IA solo se aprovecha la visión de conjunto.
-            let basic = HeuristicAnalyzer.analyze(script: script, system: system)
+            let basic = await Task.detached(priority: .userInitiated) { HeuristicAnalyzer.analyze(script: script, system: system) }.value
             if Double(guide.scenes.count) < Double(basic.scenes.count) * 0.75 {
                 var hybrid = basic
                 hybrid.premise = guide.premise.isEmpty ? basic.premise : guide.premise
@@ -143,6 +167,7 @@ final class AnalysisCenter {
 
     /// Sustituye la guía y recoloca las sesiones en las escenas equivalentes de la nueva.
     private func apply(_ guide: AdventureGuide, engine: String, to adventure: Adventure) {
+        appliedAt[adventure.id] = .now
         let old = adventure.guide
         adventure.guide = guide
         adventure.guideEngine = engine

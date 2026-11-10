@@ -100,15 +100,32 @@ struct StatBlock: Hashable {
     init(parsing original: String) {
         // Los manuales suelen escribir el menos tipográfico: «DES 8 (−1)».
         let text = original.replacingOccurrences(of: "−", with: "-")
-        func number(_ pattern: String) -> Int? {
-            guard let range = text.range(of: pattern, options: [.regularExpression, .caseInsensitive]) else { return nil }
-            let digits = text[range].split(whereSeparator: { !$0.isNumber && $0 != "-" && $0 != "+" }).last.map(String.init)
+        let range = NSRange(text.startIndex..., in: text)
+        func number(_ pattern: NSRegularExpression) -> Int? {
+            guard let match = pattern.firstMatch(in: text, range: range), let found = Range(match.range, in: text) else { return nil }
+            let digits = text[found].split(whereSeparator: { !$0.isNumber && $0 != "-" && $0 != "+" }).last.map(String.init)
             return digits.flatMap { Int($0.replacingOccurrences(of: "+", with: "")) }
         }
-        hp = number(#"\b(PV|PG|HP|puntos de (vida|golpe))\s*:?\s*\d+"#)
-        dexterity = number(#"\b(DES|DEX|destreza)\s*:?\s*\d+"#)
-        initiativeBonus = number(#"\b(iniciativa|init)\s*:?\s*[+-]?\d+"#) ?? number(#"\b(DES|DEX)\s*\d+\s*\(\s*[+-]\d+\s*\)"#)
-        armorClass = number(#"\b(CA|AC|clase de armadura)\s*:?\s*\d+"#)
+        hp = number(Self.hitPoints)
+        dexterity = number(Self.dexterityValue)
+        initiativeBonus = number(Self.initiativeValue) ?? number(Self.dexterityModifier)
+        armorClass = number(Self.armorValue)
+    }
+
+    /// Las expresiones se compilan una vez: el guion entero se revisa línea a línea.
+    private static func pattern(_ value: String) -> NSRegularExpression {
+        try! NSRegularExpression(pattern: value, options: .caseInsensitive)
+    }
+
+    private static let hitPoints = pattern(#"\b(PV|PG|HP|puntos de (vida|golpe))\s*:?\s*\d+"#)
+    private static let dexterityValue = pattern(#"\b(DES|DEX|destreza)\s*:?\s*\d+"#)
+    private static let initiativeValue = pattern(#"\b(iniciativa|init)\s*:?\s*[+-]?\d+"#)
+    private static let dexterityModifier = pattern(#"\b(DES|DEX)\s*\d+\s*\(\s*[+-]\d+\s*\)"#)
+    private static let armorValue = pattern(#"\b(CA|AC|clase de armadura)\s*:?\s*\d+"#)
+
+    /// Si la línea trae puntos de vida: sin ellos no hay estadísticas que leer.
+    static func mentionsHitPoints(_ text: String) -> Bool {
+        hitPoints.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
     }
 
     /// Iniciativa de un enemigo: en Cthulhu manda la DES; en D&D, d20 + modificador.

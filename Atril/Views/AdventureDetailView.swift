@@ -51,6 +51,8 @@ struct AdventureDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color.canvas)
+        // El buscador del guion se prepara en segundo plano: buscar o abrir la mesa es inmediato.
+        .task(id: adventure.scriptHash) { ScriptIndex.prepare(for: adventure.script) }
         #if DEBUG
         .onAppear {
             // Capturas: `-openTab plan|scenes|npcs|clues|script`.
@@ -79,7 +81,7 @@ struct AdventureDetailView: View {
         }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Buscar", systemImage: "magnifyingglass") { searchIndex = ScriptIndex(script: adventure.script) }
+                Button("Buscar", systemImage: "magnifyingglass") { searchIndex = ScriptIndex.cached(for: adventure.script) }
                     .keyboardShortcut("f", modifiers: .command)
             }
         }
@@ -299,6 +301,13 @@ struct AdventureDetailView: View {
                 }
             }
             .card()
+        } else if adventure.guide == nil, analysis.isOrganizing(adventure) {
+            HStack(spacing: 12) {
+                ProgressView().controlSize(.small)
+                Text("Organizando el guion en escenas, PNJ y pistas…").font(.callout)
+                Spacer(minLength: 0)
+            }
+            .card(padding: 14)
         } else if adventure.guide == nil {
             VStack(alignment: .leading, spacing: 10) {
                 Label("Este guion aún no está organizado", systemImage: "sparkles").font(.headline)
@@ -546,7 +555,7 @@ struct AdventureDetailView: View {
                     .scrollContentBackground(.hidden)
             } else {
                 LazyVStack(alignment: .leading, spacing: 10) {
-                    ForEach(Array(adventure.script.components(separatedBy: "\n\n").enumerated()), id: \.offset) { _, paragraph in
+                    ForEach(Array(adventure.scriptParagraphs.enumerated()), id: \.offset) { _, paragraph in
                         Text(paragraph)
                             .font(.system(.body, design: .serif))
                             .lineSpacing(3)

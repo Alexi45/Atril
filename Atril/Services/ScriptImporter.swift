@@ -30,16 +30,23 @@ enum ScriptImporter {
         switch UTType(filenameExtension: url.pathExtension) {
         case .some(let type) where type.conforms(to: .pdf):
             guard let document = PDFDocument(url: url) else { throw Failure.unreadable }
-            let layer = (0..<document.pageCount)
-                .compactMap { document.page(at: $0)?.string }
-                .joined(separator: "\n\n")
-            let words = layer.split(whereSeparator: \.isWhitespace).count
+            // Una sola pasada por las páginas: las líneas con su fuente sirven para saber si hay
+            // capa de texto y, si la hay, para recuperar la maquetación.
+            let pageCount = document.pageCount
+            let lines = PDFStructure.lines(of: document) { index in
+                guard pageCount > 20, index.isMultiple(of: 10) else { return }
+                Task { @MainActor in progress("Leyendo la página \(index + 1) de \(pageCount)") }
+            }
+            try Task.checkCancellation()
+            let words = lines.reduce(0) { $0 + WordCounter.count($1.text) }
             if words < document.pageCount * 30 {
                 text = try await recognize(document, progress: progress)
             } else {
                 // La maquetación dice qué es título y qué es texto para leer.
-                let structured = PDFStructure.text(of: document)
-                text = structured.isEmpty ? layer : structured
+                let structured = PDFStructure.markdown(lines, pageCount: document.pageCount)
+                text = structured.isEmpty
+                    ? (0..<document.pageCount).compactMap { document.page(at: $0)?.string }.joined(separator: "\n\n")
+                    : structured
             }
         case .some(let type) where type.conforms(to: .rtf):
             let data = try Data(contentsOf: url)
@@ -55,26 +62,48 @@ enum ScriptImporter {
         return cleaned
     }
 
-    /// Reconocimiento de texto (OCR) página a página, en español e inglés.
+    /// Reconocimiento de texto (OCR) en español e inglés. Las páginas se dibujan de una en una y
+    /// se reconocen varias a la vez, que es lo lento; el texto se une después en su orden.
     static func recognize(_ document: PDFDocument, progress: @escaping @MainActor (String) -> Void) async throws -> String {
+        let pageCount = document.pageCount
+        let width = max(1, min(3, ProcessInfo.processInfo.activeProcessorCount / 2))
+        var found = [[(text: String, height: CGFloat)]](repeating: [], count: pageCount)
+        var heights = [CGFloat](repeating: 0, count: pageCount)
+        try await withThrowingTaskGroup(of: (Int, [(text: String, height: CGFloat)]).self) { group in
+            var running = 0
+            var done = 0
+            func collect(_ result: (Int, [(text: String, height: CGFloat)])) async {
+                found[result.0] = result.1
+                running -= 1
+                done += 1
+                await progress("Leyendo el texto escaneado · \(done) de \(pageCount) páginas")
+            }
+            await progress("Leyendo el texto escaneado · 0 de \(pageCount) páginas")
+            for index in 0..<pageCount {
+                try Task.checkCancellation()
+                // La página siguiente se dibuja mientras se reconocen las anteriores.
+                guard let page = document.page(at: index), let image = render(page) else { continue }
+                heights[index] = page.bounds(for: .mediaBox).height
+                if running == width, let result = try await group.next() { await collect(result) }
+                group.addTask(priority: .userInitiated) { (index, try recognizeLines(in: image)) }
+                running += 1
+            }
+            while let result = try await group.next() { await collect(result) }
+        }
+
         var lines: [PDFStructure.Line] = []
-        for index in 0..<document.pageCount {
-            try Task.checkCancellation()
-            await progress("Leyendo página \(index + 1) de \(document.pageCount) (texto escaneado)")
-            guard let page = document.page(at: index), let image = render(page) else { continue }
-            let height = page.bounds(for: .mediaBox).height
-            let found = try await Task.detached(priority: .userInitiated) { try recognizeLines(in: image) }.value
-            for (position, line) in found.enumerated() {
+        for (index, page) in found.enumerated() {
+            for (position, line) in page.enumerated() {
                 lines.append(PDFStructure.Line(
                     text: line.text,
                     // La altura de la línea hace de tamaño de letra: distingue los títulos.
-                    size: (line.height * height).rounded(),
+                    size: (line.height * heights[index]).rounded(),
                     page: index,
-                    isEdge: position < 2 || position >= found.count - 2
+                    isEdge: position < 2 || position >= page.count - 2
                 ))
             }
         }
-        return PDFStructure.markdown(lines, pageCount: document.pageCount, headingRatio: 1.3)
+        return PDFStructure.markdown(lines, pageCount: pageCount, headingRatio: 1.3)
     }
 
     /// Dibuja la página a unos 200 ppp, suficiente para el reconocimiento de texto.

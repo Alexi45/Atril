@@ -26,9 +26,13 @@ enum PDFStructure {
         markdown(lines(of: document), pageCount: document.pageCount)
     }
 
-    static func lines(of document: PDFDocument) -> [Line] {
+    /// Líneas de todas las páginas con su fuente. `onPage` avisa de la página que empieza (leer
+    /// un módulo de cientos de páginas lleva unos segundos); se para si se cancela la tarea.
+    static func lines(of document: PDFDocument, onPage: (Int) -> Void = { _ in }) -> [Line] {
         var result: [Line] = []
         for index in 0..<document.pageCount {
+            if Task.isCancelled { break }
+            onPage(index)
             guard let attributed = document.page(at: index)?.attributedString else { continue }
             var pageLines: [Line] = []
             let string = attributed.string as NSString
@@ -47,7 +51,8 @@ enum PDFStructure {
                 }
                 pageLines.append(Line(
                     text: text,
-                    size: sizes.max { $0.value < $1.value }?.key ?? 0,
+                    // A igualdad de caracteres, el tamaño mayor (que no dependa del orden del diccionario).
+                    size: sizes.max { ($0.value, $0.key) < ($1.value, $1.key) }?.key ?? 0,
                     isBold: total > 0 && bold * 2 > total,
                     isItalic: total > 0 && italic * 10 >= total * 8,
                     page: index
@@ -199,11 +204,11 @@ enum PDFStructure {
         }
     }
 
-    /// El tamaño con más caracteres es el del cuerpo del texto.
+    /// El tamaño con más caracteres es el del cuerpo del texto (a igualdad, el menor).
     private static func bodySize(of lines: [Line]) -> CGFloat {
         var weights: [CGFloat: Int] = [:]
         for line in lines { weights[line.size, default: 0] += line.text.count }
-        return weights.max { $0.value < $1.value }?.key ?? 0
+        return weights.max { ($0.value, -$0.key) < ($1.value, -$1.key) }?.key ?? 0
     }
 
     private static func median(_ values: [Int]) -> Int {

@@ -37,7 +37,24 @@ enum AppleAI {
         UserDefaults.standard.object(forKey: allowCloudKey) as? Bool ?? true
     }
 
+    /// Lo que hay ahora mismo. Preguntárselo al sistema cuesta casi 0,2 ms y las vistas lo
+    /// consultan en cada repintado: se guarda medio minuto y se renueva al volver a la app.
     static var status: Status {
+        let allowsCloud = allowsCloud
+        if let cached = statusCache[allowsCloud], cached.checkedAt.timeIntervalSinceNow > -30 { return cached.status }
+        let status = currentStatus(allowsCloud: allowsCloud)
+        statusCache.insert((status, Date()), for: allowsCloud)
+        return status
+    }
+
+    /// Al volver a la app (puede que se haya activado Apple Intelligence o terminado la descarga).
+    static func refreshStatus() {
+        statusCache.removeAll()
+    }
+
+    private static let statusCache = BoundedCache<Bool, (status: Status, checkedAt: Date)>(limit: 2)
+
+    private static func currentStatus(allowsCloud: Bool) -> Status {
         var tiers: [Tier] = []
         var reason: String?
         #if canImport(FoundationModels)
@@ -314,8 +331,25 @@ enum AppleSessions {
         return LanguageModelSession(model: SystemLanguageModel.default, instructions: instructions)
     }
 
-    static func prewarm(_ tier: AppleAI.Tier) {
-        make(tier, instructions: AppleTutor.instructions(.cthulhu)).prewarm()
+    /// Sesiones del tutor ya precalentadas (modelo cargado e instrucciones procesadas), una por
+    /// motor y juego: cada pregunta usa la que espera y deja otra preparada para la siguiente,
+    /// así la respuesta empieza antes.
+    private static let readyTutors = BoundedCache<String, LanguageModelSession>(limit: 4)
+
+    private static func tutorKey(_ tier: AppleAI.Tier, _ system: GameSystem) -> String { "\(tier.rawValue)-\(system.rawValue)" }
+
+    static func prewarmTutor(_ tier: AppleAI.Tier, system: GameSystem) {
+        let key = tutorKey(tier, system)
+        guard readyTutors[key] == nil else { return }
+        let session = make(tier, instructions: AppleTutor.instructions(system))
+        session.prewarm()
+        readyTutors.insert(session, for: key)
+    }
+
+    static func tutor(_ tier: AppleAI.Tier, system: GameSystem) -> LanguageModelSession {
+        let session = readyTutors.take(tutorKey(tier, system)) ?? make(tier, instructions: AppleTutor.instructions(system))
+        prewarmTutor(tier, system: system)
+        return session
     }
 }
 
@@ -386,24 +420,10 @@ enum AppleAnalyzer {
             try Task.checkCancellation()
             guard var scene = scenes[index].scenes.first else { continue }
             await progress(Progress(done: index, total: total, phase: "Preparando «\(scene.title)» · escena \(index + 1) de \(scenes.count)"))
-            let prompt = """
-            Trasfondo de la aventura (solo para el máster): \(background.isEmpty ? "no se indica" : background)
-
-            Escena «\(scene.title)» del guion:
-
-            \(basic.bodies[index].truncated(words: wordLimit))
-
-            Personajes de la aventura: \(names.isEmpty ? "no se conocen" : names).
-
-            Prepara la ficha de dirección de esta escena.
-            """
+            let prompt = enrichmentPrompt(title: scene.title, body: basic.bodies[index], background: background,
+                                          names: names, wordLimit: wordLimit)
             do {
-                let session = AppleSessions.make(tier, instructions: enrichmentInstructions(system))
-                // Tope de respuesta: si el modelo entra en bucle, falla en segundos y no en minutos.
-                let value = try await retryingWhenBusy {
-                    try await session.respond(to: prompt, generating: SceneEnrichment.self,
-                                              options: GenerationOptions(temperature: 0.2, maximumResponseTokens: 900)).content
-                }
+                let value = try await enrichment(prompt: prompt, system: system, tier: tier)
                 apply(value, to: &scene, characters: basic.characters)
                 scenes[index].scenes = [scene]
                 scenes[index].summary = scene.summary
@@ -427,10 +447,11 @@ enum AppleAnalyzer {
         }
 
         var characters = basic.characters
+        let source = CastSource(script: script)
         for (batchIndex, batch) in castBatches.enumerated() {
             try Task.checkCancellation()
             await progress(Progress(done: scenes.count + batchIndex, total: total, phase: "Preparando las fichas de los PNJ"))
-            for draft in try await cast(batch, script: script, system: system, tier: tier) {
+            for draft in try await cast(batch, source: source, system: system, tier: tier) {
                 guard let position = characters.firstIndex(where: { Prose.sameName($0.name, draft.name) })
                     ?? (batch.count == 1 ? characters.firstIndex(of: batch[0]) : nil) else { continue }
                 var character = characters[position]
@@ -461,6 +482,31 @@ enum AppleAnalyzer {
         overview.prep = Array((overview.prep + original.prep).cleaned.prefix(6))
         await progress(Progress(done: total, total: total, phase: "Guía lista"))
         return GuideMerger.merge(chunks: drafts, overview: overview, links: links, system: system)
+    }
+
+    /// Lo que se le pide a la IA para una escena: el trasfondo, el texto de la escena y quiénes
+    /// son los personajes.
+    static func enrichmentPrompt(title: String, body: String, background: String, names: String, wordLimit: Int) -> String {
+        """
+        Trasfondo de la aventura (solo para el máster): \(background.isEmpty ? "no se indica" : background)
+
+        Escena «\(title)» del guion:
+
+        \(body.truncated(words: wordLimit))
+
+        Personajes de la aventura: \(names.isEmpty ? "no se conocen" : names).
+
+        Prepara la ficha de dirección de esta escena.
+        """
+    }
+
+    static func enrichment(prompt: String, system: GameSystem, tier: AppleAI.Tier) async throws -> SceneEnrichment {
+        let session = AppleSessions.make(tier, instructions: enrichmentInstructions(system))
+        // Tope de respuesta: si el modelo entra en bucle, falla en segundos y no en minutos.
+        return try await retryingWhenBusy {
+            try await session.respond(to: prompt, generating: SceneEnrichment.self,
+                                      options: GenerationOptions(temperature: 0.2, maximumResponseTokens: 900)).content
+        }
     }
 
     /// Para guiones sin estructura: un paso por trozo y un paso final de conjunto.
@@ -531,12 +577,34 @@ enum AppleAnalyzer {
         if !Prose.useful(value.ifStuck).isEmpty { scene.ifStuck = value.ifStuck }
     }
 
+    /// Las frases del guion, troceadas y plegadas una vez para buscar en ellas a cada personaje.
+    struct CastSource {
+        let sentences: [String]
+        let folded: [String]
+
+        init(script: String) {
+            sentences = Prose.sentences(HeuristicAnalyzer.plain(script))
+            folded = sentences.map(Prose.fold)
+        }
+
+        /// Frases que nombran a alguien (por las palabras de su nombre de más de tres letras),
+        /// para darle al modelo solo lo que le concierne.
+        func sentences(mentioning name: String, limit: Int) -> [String] {
+            let keys = Prose.words(name).filter { $0.count > 3 }
+            guard !keys.isEmpty else { return [] }
+            var found: [String] = []
+            for (sentence, folded) in zip(sentences, folded) where found.count < limit {
+                if keys.contains(where: { folded.containsBytes($0) }) { found.append(sentence) }
+            }
+            return found
+        }
+    }
+
     /// Fichas de un lote de PNJ, con solo las frases del guion que los nombran.
     /// Si el lote desborda el contexto, se parte en dos.
-    private static func cast(_ batch: [DraftCharacter], script: String, system: GameSystem, tier: AppleAI.Tier) async throws -> [CharacterExtraction] {
-        let text = HeuristicAnalyzer.plain(script)
+    private static func cast(_ batch: [DraftCharacter], source: CastSource, system: GameSystem, tier: AppleAI.Tier) async throws -> [CharacterExtraction] {
         let context = batch.map { character in
-            let sentences = Prose.sentences(mentioning: character.name, in: text, limit: tier == .cloud ? 12 : 6)
+            let sentences = source.sentences(mentioning: character.name, limit: tier == .cloud ? 12 : 6)
             return "- \(character.name): \(sentences.joined(separator: " ").truncated(words: tier == .cloud ? 300 : 110))"
         }.joined(separator: "\n")
         let prompt = """
@@ -562,8 +630,8 @@ enum AppleAnalyzer {
             #endif
             guard case .contextTooLarge = AppleAI.Failure.classify(error), batch.count > 1 else { return [] }
             let half = batch.count / 2
-            return try await cast(Array(batch[..<half]), script: script, system: system, tier: tier)
-                + cast(Array(batch[half...]), script: script, system: system, tier: tier)
+            return try await cast(Array(batch[..<half]), source: source, system: system, tier: tier)
+                + cast(Array(batch[half...]), source: source, system: system, tier: tier)
         }
     }
 
@@ -694,7 +762,7 @@ enum AppleTutor {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let session = AppleSessions.make(tier, instructions: instructions(system))
+                    let session = AppleSessions.tutor(tier, system: system)
                     let stream = session.streamResponse(to: prompt, options: GenerationOptions(temperature: 0.6))
                     for try await snapshot in stream {
                         continuation.yield(snapshot.content)

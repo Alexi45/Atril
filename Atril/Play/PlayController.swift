@@ -48,18 +48,20 @@ final class PlayController {
     private var resumedAt: Date?
 
     init(session: PlaySession) {
+        let adventure = session.adventure!
+        let guide = adventure.guide
         self.session = session
-        self.adventure = session.adventure!
-        self.guide = session.adventure?.guide
-        self.index = ScriptIndex(script: session.adventure?.script ?? "")
-        self.currentSceneID = session.currentSceneID ?? session.adventure?.guide?.scenes.first?.id
+        self.adventure = adventure
+        self.guide = guide
+        self.index = ScriptIndex.cached(for: adventure.script)
+        self.currentSceneID = session.currentSceneID ?? guide?.scenes.first?.id
         self.visitedSceneIDs = session.visitedSceneIDs
         self.foundClueIDs = Set(session.foundClueIDs)
         self.notes = session.notes
         self.players = session.players
         self.combat = (try? JSONDecoder().decode(Combat.self, from: session.combatData)) ?? Combat()
         self.messages = session.chat
-        self.enemyCandidates = StatBlock.candidates(in: session.adventure?.script ?? "")
+        self.enemyCandidates = StatBlock.candidates(in: adventure.script)
         self.storedElapsed = session.elapsed
         self.sceneEnteredAt = session.elapsed
         self.backend = .current
@@ -75,14 +77,14 @@ final class PlayController {
         startClock()
         refreshBackend()
         #if canImport(FoundationModels)
-        if #available(iOS 26.0, macOS 26.0, *), case .apple(let tier) = backend { AppleSessions.prewarm(tier) }
+        if #available(iOS 26.0, macOS 26.0, *), case .apple(let tier) = backend { AppleSessions.prewarmTutor(tier, system: system) }
         #endif
     }
 
     /// La IA terminó de preparar la guía mientras se jugaba.
     func reloadGuide() {
         guide = adventure.guide
-        index = ScriptIndex(script: adventure.script)
+        index = ScriptIndex.cached(for: adventure.script)
         currentSceneID = session.currentSceneID ?? guide?.scenes.first?.id
         visitedSceneIDs = session.visitedSceneIDs
         foundClueIDs = Set(session.foundClueIDs)
